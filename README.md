@@ -7,6 +7,7 @@ Kleine Browser-Spiele, gehostet mit GitHub Pages.
 | Ordner | Spiel | Link |
 | --- | --- | --- |
 | `knobelkiste/` | Wochentag-Trainer, Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel, Markenraten | https://nilswieczorek99-png.github.io/games/knobelkiste/ |
+| `sternenkessel/` | 3D-Rollenspiel (Godot-Web-Export) | https://nilswieczorek99-png.github.io/games/sternenkessel/ |
 
 ## Neues Spiel hinzufügen
 
@@ -20,3 +21,7 @@ Kleine Browser-Spiele, gehostet mit GitHub Pages.
 - **Android:** Link in Chrome öffnen → Menü (⋮) → „App installieren“.
 
 Bei Updates eines Spiels in dessen `sw.js` die `VERSION` hochzählen, damit installierte Apps die neue Version laden.
+
+## Sternenkessel aktualisieren
+
+`sternenkessel/` ist ein Web-Export aus Godot 4.3 (Preset „Web“, ohne Threads). Neu exportieren und den Inhalt von `build/web/` in diesen Ordner kopieren.
