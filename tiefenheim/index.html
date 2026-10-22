@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Tiefenheim</title>
+<meta name="description" content="Aufbauspiel: eine Zwergensiedlung tief unter dem Berg.">
+<meta name="theme-color" content="#14100d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Tiefenheim">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="title"><h1>Tiefenheim</h1><span id="year"></span></div>
+  <div id="stats"></div>
+  <div id="res"></div>
+</header>
+<main><div id="view"></div></main>
+<nav>
+  <button data-a="tab" data-t="caves"><span>⛰️</span>Höhlen</button>
+  <button data-a="tab" data-t="folk"><span>👥</span>Volk<i id="nb-folk"></i></button>
+  <button data-a="tab" data-t="research"><span>📜</span>Forschung<i id="nb-research"></i></button>
+  <button data-a="tab" data-t="log"><span>📖</span>Chronik</button>
+</nav>
+<div id="shade"></div>
+<div id="sheet"><div class="grip"></div><div id="sheetBody"></div></div>
+<div id="toast"></div>
+<script src="data.js"></script>
+<script src="sim.js"></script>
+<script src="ui.js"></script>
+<script>
+  /* Web-Version: beim Verlassen sicher speichern (iPhone schließt Apps ohne Vorwarnung) und offline verfügbar machen */
+  window.addEventListener('pagehide', function () { try { window.saveGame && window.saveGame(); } catch (e) {} });
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  }
+</script>
+</body>
+</html>

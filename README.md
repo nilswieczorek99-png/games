@@ -8,6 +8,7 @@ Kleine Browser-Spiele, gehostet mit GitHub Pages.
 | --- | --- | --- |
 | `knobelkiste/` | Wochentag-Trainer, Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel, Markenraten | https://nilswieczorek99-png.github.io/games/knobelkiste/ |
 | `sternenkessel/` | 3D-Rollenspiel (Godot-Web-Export) | https://nilswieczorek99-png.github.io/games/sternenkessel/ |
+| `tiefenheim/` | Aufbauspiel mit Zwergensiedlung | https://nilswieczorek99-png.github.io/games/tiefenheim/ |
 
 ## Neues Spiel hinzufügen
 
