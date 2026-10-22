@@ -1,10 +1,22 @@
-# Knobelkiste
+# Spiele
 
-Wochentag-Trainer (Doomsday-Methode), Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel und Markenraten als Web-App. Läuft offline, Punkte bleiben auf dem Gerät.
+Kleine Browser-Spiele, gehostet mit GitHub Pages.
 
-**Spielen:** https://nilswieczorek99-png.github.io/games/
+**Übersicht:** https://nilswieczorek99-png.github.io/games/
 
-**Aufs iPhone:** Link in Safari öffnen → Teilen → „Zum Home-Bildschirm“.
-**Auf Android:** Link in Chrome öffnen → Menü (⋮) → „App installieren“.
+| Ordner | Spiel | Link |
+| --- | --- | --- |
+| `knobelkiste/` | Wochentag-Trainer, Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel, Markenraten | https://nilswieczorek99-png.github.io/games/knobelkiste/ |
 
-Bei Updates in `sw.js` die `VERSION` hochzählen, damit installierte Apps die neue Version laden.
+## Neues Spiel hinzufügen
+
+1. Neuen Ordner anlegen, z. B. `mein-spiel/`, mit einer `index.html` darin.
+2. In der `index.html` im Hauptordner einen Eintrag in der Liste ergänzen.
+3. Hochladen – nach 1–2 Minuten ist das Spiel unter `…/games/mein-spiel/` erreichbar.
+
+## Aufs Handy
+
+- **iPhone:** Link in Safari öffnen → Teilen → „Zum Home-Bildschirm“.
+- **Android:** Link in Chrome öffnen → Menü (⋮) → „App installieren“.
+
+Bei Updates eines Spiels in dessen `sw.js` die `VERSION` hochzählen, damit installierte Apps die neue Version laden.
