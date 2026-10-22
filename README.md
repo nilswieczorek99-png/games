@@ -9,6 +9,7 @@ Kleine Browser-Spiele, gehostet mit GitHub Pages.
 | `knobelkiste/` | Wochentag-Trainer, Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel, Markenraten | https://nilswieczorek99-png.github.io/games/knobelkiste/ |
 | `sternenkessel/` | 3D-Rollenspiel (Godot-Web-Export) | https://nilswieczorek99-png.github.io/games/sternenkessel/ |
 | `tiefenheim/` | Aufbauspiel mit Zwergensiedlung | https://nilswieczorek99-png.github.io/games/tiefenheim/ |
+| `lindenhof/` | Pferdespiel (Godot-Web-Export) | https://nilswieczorek99-png.github.io/games/lindenhof/ |
 
 ## Neues Spiel hinzufügen
 
@@ -23,6 +24,6 @@ Kleine Browser-Spiele, gehostet mit GitHub Pages.
 
 Bei Updates eines Spiels in dessen `sw.js` die `VERSION` hochzählen, damit installierte Apps die neue Version laden.
 
-## Sternenkessel aktualisieren
+## Sternenkessel und Lindenhof aktualisieren
 
-`sternenkessel/` ist ein Web-Export aus Godot 4.3 (Preset „Web“, ohne Threads). Neu exportieren und den Inhalt von `build/web/` in diesen Ordner kopieren.
+`sternenkessel/` und `lindenhof/` sind Web-Exporte aus Godot 4.3 (Preset „Web“, ohne Threads). Neu exportieren und den Inhalt von `build/web/` in den jeweiligen Ordner kopieren.
