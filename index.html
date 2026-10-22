@@ -1,0 +1,2443 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Knobelkiste</title>
+<meta name="description" content="Wochentag-Trainer, Sudoku, Kreuzworträtsel, Galgenmännchen, Rätsel und Markenraten.">
+<meta name="theme-color" content="#1C2350">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Knobelkiste">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Knobelkiste – Rätselheft-Look: Tinte auf Papier, gelber Textmarker */
+:root {
+  --paper: #F5F6FA;
+  --sheet: #FFFFFF;
+  --ink: #1C2350;
+  --ink-soft: #4C5384;
+  --muted: #7A80A8;
+  --line: #D9DCEB;
+  --line-strong: #1C2350;
+  --marker: #FFD23F;
+  --marker-soft: #FFF1B8;
+  --peer: #EEF0FA;
+  --ok: #17885B;
+  --ok-soft: #DDF3E8;
+  --bad: #C93A3A;
+  --bad-soft: #FBE3E3;
+  --radius: 14px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-round: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12152B; --sheet: #1A1E3B; --ink: #E9EBF8; --ink-soft: #B7BCE0; --muted: #8389B4;
+    --line: #2C3160; --line-strong: #9FA6DA; --marker: #FFD23F; --marker-soft: #4A4220;
+    --peer: #222754; --ok: #4CC891; --ok-soft: #173A2E; --bad: #FF7B7B; --bad-soft: #43202A;
+    color-scheme: dark;
+  }
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.5;
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior-y: none;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--marker); outline-offset: 2px; }
+mark { background: linear-gradient(transparent 52%, var(--marker) 52%, var(--marker) 92%, transparent 92%); color: inherit; padding: 0 .08em; }
+
+/* ---- Kopfzeile ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  background: var(--ink); color: var(--paper);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .topbar { background: #0C0E20; color: var(--ink); } }
+.topbar h1 { flex: 1; margin: 0; font: 700 19px/1.2 var(--font-round); letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.back { border: 0; background: none; padding: 6px; margin-left: -8px; border-radius: 10px; display: grid; place-items: center; }
+.back:active { background: rgba(255,255,255,.12); }
+.score { font: 700 14px/1 var(--font-round); background: var(--marker); color: #1C2350; padding: 6px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+
+.view { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+
+/* ---- Allgemeine Bedienelemente ---- */
+.btn { border: 0; border-radius: 12px; padding: 13px 18px; font-weight: 650; font-size: 16px; }
+.btn.primary { background: var(--ink); color: var(--paper); }
+.btn.primary:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; border: 1.5px solid var(--line); color: var(--ink-soft); }
+.btn.wide { width: 100%; display: block; margin-top: 12px; }
+.tool {
+  border: 1.5px solid var(--line); background: var(--sheet); border-radius: 10px;
+  padding: 9px 4px; font-size: 14px; font-weight: 600; color: var(--ink-soft); min-height: 42px;
+}
+.tool:active { background: var(--peer); }
+.tool.on { background: var(--marker); border-color: var(--marker); color: #1C2350; }
+.seg { display: flex; background: var(--sheet); border: 1.5px solid var(--line); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg-btn { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 8px 4px; font-size: 14px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+.seg-btn.on { background: var(--ink); color: var(--paper); }
+.hint-small { color: var(--muted); font-size: 13px; text-align: center; margin: 12px 0; }
+.linkish { border: 0; background: none; padding: 0; text-decoration: underline; color: var(--muted); font-size: inherit; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px);
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 12px;
+  font-size: 14px; font-weight: 600; max-width: calc(100% - 32px); text-align: center;
+  transition: opacity .2s, transform .2s; z-index: 50;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.bad { background: var(--bad); color: #fff; }
+.toast.ok { background: var(--ok); color: #fff; }
+
+/* ---- Startseite ---- */
+.hero { padding: 18px 2px 22px; }
+.hero-greet { margin: 0 0 2px; color: var(--muted); font-weight: 600; }
+.hero-title { margin: 0; font: 800 34px/1.1 var(--font-round); letter-spacing: -.01em; }
+.tiles { display: grid; gap: 12px; }
+.tile {
+  display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 14px;
+  text-align: left; padding: 14px; border: 1.5px solid var(--line); border-radius: var(--radius);
+  background: var(--sheet);
+}
+.tile:active { border-color: var(--ink); }
+.tile-glyph {
+  width: 58px; height: 58px; display: grid; place-items: center;
+  font: 800 26px/1 var(--font-round); border-radius: 12px; border: 2px solid var(--ink);
+}
+.tile-doomsday .tile-glyph { background: var(--marker); color: #1C2350; border-color: var(--marker); }
+.tile-sudoku .tile-glyph { background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 19px 19px; background-position: -1px -1px; }
+.tile-kreuzwort .tile-glyph { background: var(--ink); color: var(--paper); }
+.tile-raetsel .tile-glyph { border-style: dashed; }
+.tile-body { display: flex; flex-direction: column; min-width: 0; }
+.tile-name { font: 700 18px/1.25 var(--font-round); }
+.tile-desc { font-size: 14px; color: var(--muted); }
+.tile-pts { font-weight: 700; font-size: 14px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.foot { margin-top: 28px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ---- Wochentag-Trainer ---- */
+.dd-controls { display: grid; gap: 8px; }
+.dd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0; }
+.stat { text-align: center; }
+.stat b { display: block; font: 800 20px/1.1 var(--font-round); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11.5px; color: var(--muted); }
+.dd-card { background: var(--sheet); border: 2px solid var(--ink); border-radius: 18px; padding: 18px 16px 12px; text-align: center; }
+.dd-ask { margin: 0; color: var(--muted); font-size: 14px; }
+.dd-date { margin: 6px 0 0; font: 800 34px/1.15 var(--font-round); letter-spacing: -.01em; }
+.dd-date .dd-yr { background: linear-gradient(transparent 55%, var(--marker) 55%, var(--marker) 92%, transparent 92%); }
+.dd-year { font-size: 56px; }
+.dd-clock { margin: 6px 0 0; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; }
+.dd-answers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.dd-answers .dd-ans:nth-child(7) { grid-column: span 2; }
+.dd-ans {
+  border: 1.5px solid var(--line); background: var(--sheet); border-radius: 12px; padding: 10px 2px;
+  display: flex; flex-direction: column; align-items: center; min-height: 62px; justify-content: center;
+}
+.dd-ans:active { border-color: var(--ink); }
+.dd-ans-short { font: 800 20px/1.1 var(--font-round); }
+.dd-ans-long { font-size: 11px; color: var(--muted); }
+.dd-ans.right { background: var(--ok); border-color: var(--ok); color: #fff; }
+.dd-ans.right .dd-ans-long, .dd-ans.wrong .dd-ans-long { color: rgba(255,255,255,.85); }
+.dd-ans.wrong { background: var(--bad); border-color: var(--bad); color: #fff; }
+.dd-ans:disabled { cursor: default; }
+.dd-after { margin-top: 6px; }
+.verdict { margin: 12px 0 0; font-weight: 700; text-align: center; font-size: 17px; }
+.verdict.ok { color: var(--ok); }
+.verdict.bad { color: var(--bad); }
+.explain { margin-top: 12px; background: var(--sheet); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.explain summary { font-weight: 700; cursor: pointer; }
+.steps { list-style: none; margin: 10px 0 2px; padding: 0; display: grid; gap: 8px; counter-reset: s; }
+.steps li { display: grid; grid-template-columns: 1fr; padding-left: 30px; position: relative; counter-increment: s; }
+.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: 1px; width: 21px; height: 21px; border-radius: 50%;
+  border: 1.5px solid var(--ink-soft); display: grid; place-items: center; font-size: 12px; font-weight: 700;
+}
+.steps li.final::before { background: var(--marker); border-color: var(--marker); color: #1C2350; }
+.step-k { font-size: 13px; color: var(--muted); }
+.step-v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.steps li.final .step-v { font-weight: 800; }
+
+.learn { background: var(--sheet); border-radius: 16px; border: 1.5px solid var(--line); padding: 4px 18px 18px; }
+.learn h3 { font: 700 18px/1.3 var(--font-round); margin: 22px 0 6px; }
+.learn p { margin: 6px 0; }
+.learn .lead { font-size: 17px; margin-top: 16px; }
+.learn .tip { background: var(--marker-soft); padding: 10px 12px; border-radius: 10px; }
+.learn ol.plain { margin: 6px 0; padding-left: 22px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tbl th, .tbl td { text-align: left; padding: 7px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-weight: 600; width: 50%; }
+
+/* ---- Sudoku ---- */
+.su-head { display: flex; justify-content: space-between; margin: 12px 2px 8px; font-weight: 650; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.su-board {
+  display: grid; grid-template-columns: repeat(9, 1fr); aspect-ratio: 1;
+  border: 2.5px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--sheet);
+  transition: opacity .2s;
+}
+.su-board.loading { opacity: .3; }
+.su-cell {
+  border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); border-color: var(--line);
+  background: var(--sheet); padding: 0; display: grid; place-items: center;
+  font: 600 clamp(18px, 6vw, 28px)/1 var(--font-round); color: #3346C8; aspect-ratio: 1;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .su-cell { color: #9FB0FF; } }
+.su-cell.br { border-right: 2px solid var(--line-strong); }
+.su-cell.bb { border-bottom: 2px solid var(--line-strong); }
+.su-cell:nth-child(9n) { border-right: 0; }
+.su-cell:nth-child(n+73) { border-bottom: 0; }
+.su-cell.given { color: var(--ink); font-weight: 800; }
+.su-cell.peer { background: var(--peer); }
+.su-cell.same { background: var(--marker-soft); }
+.su-cell.sel { background: var(--marker); color: #1C2350; }
+.su-cell.bad { color: var(--bad); background: var(--bad-soft); }
+.su-cell.sel.bad { background: var(--marker); color: var(--bad); }
+.notes { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; height: 100%; padding: 1px; }
+.notes span { font: 600 clamp(8px, 2.4vw, 11px)/1 var(--font); color: var(--muted); display: grid; place-items: center; }
+.su-pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin-top: 14px; }
+.su-num {
+  border: 1.5px solid var(--line); background: var(--sheet); border-radius: 10px; padding: 8px 0 4px;
+  font: 700 22px/1 var(--font-round); display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.su-num small { font-size: 10px; color: var(--muted); font-weight: 600; }
+.su-num.used { opacity: .35; }
+.su-num:active { background: var(--marker); }
+.su-tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; }
+.su-tools .tool { font-size: 12.5px; padding: 9px 2px; }
+.su-win, .cw-win { text-align: center; background: var(--marker); color: #1C2350; border-radius: 16px; padding: 14px; margin-top: 12px; }
+.su-win h3, .cw-win h3 { margin: 0; font: 800 22px/1.2 var(--font-round); }
+.su-win p, .cw-win p { margin: 4px 0 10px; font-weight: 600; }
+.su-win .btn.primary, .cw-win .btn.primary { background: #1C2350; color: #fff; }
+
+/* ---- Kreuzworträtsel ---- */
+.cw-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 6px; }
+.cw-wrap { display: flex; justify-content: center; margin: 16px 0 6px; }
+.cw-grid { display: grid; gap: 0; --cw: 30px; }
+.cw-cell {
+  width: var(--cw); height: var(--cw); position: relative; background: var(--sheet);
+  border: 1px solid var(--line-strong); margin: 0 -1px -1px 0; display: grid; place-items: center; cursor: pointer;
+}
+.cw-cell.void { background: transparent; border-color: transparent; cursor: default; }
+.cw-cell i { position: absolute; top: 1px; left: 2px; font: 600 calc(var(--cw) * .27)/1 var(--font); font-style: normal; color: var(--ink-soft); }
+.cw-cell b { font: 700 calc(var(--cw) * .55)/1 var(--font-round); text-transform: uppercase; }
+.cw-cell.word { background: var(--marker-soft); }
+.cw-cell.sel { background: var(--marker); color: #1C2350; box-shadow: inset 0 0 0 2.5px #1C2350; z-index: 1; }
+.cw-cell.sel i { color: #1C2350; }
+.cw-cell.bad b { color: var(--bad); }
+.cw-cell.solved { background: var(--ok-soft); }
+.kb {
+  position: sticky; bottom: 0; background: var(--paper); padding: 8px 0 calc(env(safe-area-inset-bottom) + 6px);
+  margin: 8px -16px 0; padding-left: 6px; padding-right: 6px; border-top: 1px solid var(--line); z-index: 5;
+}
+.cw-current { margin: 0 6px 8px; font-weight: 650; font-size: 14.5px; min-height: 2.6em; line-height: 1.3; }
+.kb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 6px; }
+.kb-key {
+  flex: 1; max-width: 44px; height: 46px; border: 0; border-radius: 8px; background: var(--sheet);
+  box-shadow: 0 1px 0 var(--line); font: 650 18px/1 var(--font-round); padding: 0;
+}
+.kb-key:active { background: var(--marker); color: #1C2350; }
+.kb-key.kb-wide { max-width: 66px; flex: 1.5; background: var(--peer); }
+.cw-clues { display: grid; gap: 4px; }
+.cw-clues h3 { font: 700 17px/1.3 var(--font-round); margin: 14px 0 6px; }
+.cw-list { list-style: none; margin: 0; padding: 0; }
+.cw-list li { padding: 8px 10px; border-radius: 9px; cursor: pointer; font-size: 15px; }
+.cw-list li b { font-variant-numeric: tabular-nums; }
+.cw-list li.on { background: var(--marker-soft); }
+.cw-list li.full { color: var(--muted); }
+
+/* ---- Rätsel ---- */
+.rt-card { background: var(--sheet); border: 2px solid var(--ink); border-radius: 18px; padding: 16px; }
+.rt-meta { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.rt-q { margin: 0 0 16px; font: 600 21px/1.4 var(--font-round); }
+.rt-q::before { content: "„"; }
+.rt-q::after { content: "“"; }
+.rt-form { display: flex; gap: 8px; }
+.rt-input {
+  flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font: inherit; font-size: 17px;
+  background: var(--paper); color: var(--ink);
+}
+.rt-input:focus { border-color: var(--ink); outline: none; }
+.rt-hint { background: var(--marker-soft); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin: 0 0 12px; }
+.rt-hint:empty { display: none; }
+.rt-feedback { margin: 10px 0 0; font-weight: 650; min-height: 1.5em; }
+.rt-feedback.bad { color: var(--bad); }
+.rt-feedback.ok { color: var(--ok); }
+.rt-feedback.neutral { color: var(--muted); }
+.rt-answer { margin: 2px 0 0; font: 800 30px/1.2 var(--font-round); }
+.rt-answer { display: inline-block; background: linear-gradient(transparent 55%, var(--marker) 55%, var(--marker) 92%, transparent 92%); }
+.rt-note { color: var(--ink-soft); font-size: 14px; margin: 6px 0 0; }
+.rt-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (min-width: 600px) {
+  .cw-clues { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .kb { margin-left: 0; margin-right: 0; border-radius: 14px 14px 0 0; }
+}
+
+/* ---- Startseite: neue Kacheln ---- */
+.tile-galgen .tile-glyph { font-size: 22px; letter-spacing: .04em; }
+.tile-marken .tile-glyph { background: var(--marker-soft); border-color: var(--marker); }
+
+/* ---- Galgenmännchen ---- */
+.hg-score { margin: 0 2px 8px; color: var(--muted); font-size: 13px; text-align: center; }
+.hg-stage { background: var(--sheet); border: 2px solid var(--ink); border-radius: 18px; padding: 12px 12px 6px; text-align: center; }
+.hg-draw { display: flex; justify-content: center; }
+.hg-svg { width: 150px; height: 170px; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; fill: none; }
+.hg-svg > * { animation: hg-in .25s ease-out; }
+@keyframes hg-in { from { opacity: 0; } to { opacity: 1; } }
+.hg-lives { margin: 2px 0 4px; color: var(--muted); font-size: 13px; min-height: 1.4em; font-variant-numeric: tabular-nums; }
+.hg-word { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 18px 0 6px; }
+.hg-letter {
+  width: 30px; height: 40px; border-bottom: 3px solid var(--ink); display: grid; place-items: end center;
+  font: 800 26px/1.2 var(--font-round);
+}
+.hg-letter.shown { color: var(--ink); }
+.hg-letter.missed { color: var(--bad); }
+.hg-hint { text-align: center; font-size: 14px; color: var(--ink-soft); min-height: 1.5em; margin: 6px 0; }
+.hg-kb { margin-top: 10px; }
+.kb-key.hit { background: var(--ok); color: #fff; }
+.kb-key.miss { background: transparent; color: var(--muted); box-shadow: none; text-decoration: line-through; }
+.kb-key:disabled { cursor: default; }
+.kb-key:disabled:not(.hit):not(.miss) { opacity: .45; }
+.hg-tools { display: grid; grid-template-columns: 1.6fr 1fr; gap: 6px; margin-top: 10px; }
+.hg-result { text-align: center; border-radius: 16px; padding: 14px; margin-top: 10px; }
+.hg-result.won { background: var(--marker); color: #1C2350; }
+.hg-result.lost { background: var(--bad-soft); color: var(--ink); }
+.hg-result h3 { margin: 0; font: 800 22px/1.2 var(--font-round); }
+.hg-result p { margin: 4px 0 10px; font-weight: 600; }
+.hg-result.won .btn.primary { background: #1C2350; color: #fff; }
+
+/* ---- Markenraten ---- */
+.mk-ask { margin: 0 0 12px; font: 700 21px/1.3 var(--font-round); }
+.mk-hints { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.mk-hints li { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); }
+.mk-hints li.open { background: var(--paper); }
+.mk-hints li.locked { border-style: dashed; color: var(--muted); }
+.mk-pts { font: 800 14px/1.6 var(--font-round); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.mk-hints li.open .mk-pts { color: #1C2350; background: var(--marker); border-radius: 6px; text-align: center; }
+.mk-txt { font-size: 15.5px; line-height: 1.45; }
+.mk-tools { grid-template-columns: 1.4fr 1fr; }
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <button class="back" id="backBtn" aria-label="Zurück" hidden>
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <h1 id="title">Knobelkiste</h1>
+  <div class="score" id="totalScore" title="Gesamtpunkte"></div>
+</header>
+<main id="view"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>/* js/core.js */
+/* Knobelkiste – Grundfunktionen: Speicher, Punkte, Hilfsfunktionen */
+(function () {
+  'use strict';
+  var KK = (window.KK = window.KK || {});
+  KK.modes = {};
+
+  // ---- Speicher (localStorage, abgesichert) ----
+  var PREFIX = 'knobelkiste.';
+  KK.store = {
+    get: function (key, fallback) {
+      try {
+        var raw = window.localStorage.getItem(PREFIX + key);
+        return raw === null ? fallback : JSON.parse(raw);
+      } catch (e) { return fallback; }
+    },
+    set: function (key, value) {
+      try { window.localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch (e) { /* egal */ }
+    },
+    remove: function (key) {
+      try { window.localStorage.removeItem(PREFIX + key); } catch (e) { /* egal */ }
+    }
+  };
+
+  // ---- Punkte pro Modus ----
+  KK.points = {
+    all: function () { return KK.store.get('points', { doomsday: 0, sudoku: 0, kreuzwort: 0, raetsel: 0 }); },
+    add: function (mode, n) {
+      var p = KK.points.all();
+      p[mode] = (p[mode] || 0) + n;
+      KK.store.set('points', p);
+      KK.renderTotal();
+      return p[mode];
+    },
+    get: function (mode) { return KK.points.all()[mode] || 0; },
+    total: function () {
+      var p = KK.points.all(), s = 0;
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) s += p[k];
+      return s;
+    }
+  };
+
+  KK.renderTotal = function () {
+    var el = document.getElementById('totalScore');
+    if (el) el.textContent = KK.points.total() + ' P';
+  };
+
+  // ---- DOM-Helfer ----
+  KK.h = function (tag, attrs, children) {
+    var el = document.createElement(tag);
+    if (attrs) {
+      for (var k in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+        var v = attrs[k];
+        if (v === null || v === undefined || v === false) continue;
+        if (k === 'class') el.className = v;
+        else if (k === 'text') el.textContent = v;
+        else if (k === 'html') el.innerHTML = v;
+        else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+        else el.setAttribute(k, v === true ? '' : v);
+      }
+    }
+    if (children !== undefined) {
+      if (!Array.isArray(children)) children = [children];
+      children.forEach(function (c) {
+        if (c === null || c === undefined || c === false) return;
+        el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
+      });
+    }
+    return el;
+  };
+
+  var toastTimer = null;
+  KK.toast = function (msg, kind) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'toast show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = 'toast'; }, 2200);
+  };
+
+  KK.vibrate = function (ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* egal */ }
+  };
+
+  // ---- Zufall ----
+  KK.randInt = function (min, max) { return min + Math.floor(Math.random() * (max - min + 1)); };
+  KK.shuffle = function (arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  };
+
+  KK.formatTime = function (sec) {
+    sec = Math.max(0, Math.floor(sec));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  };
+
+  // Text vergleichbar machen (für Rätsel-Antworten)
+  KK.normalize = function (s) {
+    return String(s).toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]/g, '');
+  };
+})();
+
+</script>
+<script>/* data/words.js */
+/* Wörter und Hinweise für das Kreuzworträtsel.
+   Schreibweise wie im Rätselheft: Ä = AE, Ö = OE, Ü = UE, ß = SS. */
+window.KK = window.KK || {};
+window.KK.WORDS = [
+  ['ADLER', 'Greifvogel im Bundeswappen'],
+  ['ANKER', 'Hält das Schiff an Ort und Stelle'],
+  ['APFEL', 'Obst, das Newton auf den Kopf gefallen sein soll'],
+  ['ARZT', 'Mediziner'],
+  ['ASCHE', 'Bleibt nach dem Feuer übrig'],
+  ['AST', 'Teil eines Baumes'],
+  ['ATLAS', 'Buch voller Landkarten'],
+  ['AUTO', 'Fahrzeug mit vier Rädern'],
+  ['BACH', 'Kleiner Fluss'],
+  ['BAECKER', 'Backt Brötchen'],
+  ['BAHN', 'Fährt auf Schienen'],
+  ['BALKON', 'Vorbau am Haus mit Geländer'],
+  ['BANANE', 'Gelbe, krumme Frucht'],
+  ['BANK', 'Geldinstitut oder Sitzgelegenheit'],
+  ['BAUM', 'Hat Stamm, Äste und Blätter'],
+  ['BERG', 'Hohe Erhebung im Gelände'],
+  ['BESEN', 'Kehrgerät, auch für Hexen'],
+  ['BIENE', 'Liefert Honig'],
+  ['BIER', 'Gebrautes Getränk aus Hopfen und Malz'],
+  ['BIRNE', 'Obst oder Glühlampe'],
+  ['BLITZ', 'Kommt vor dem Donner'],
+  ['BLUME', 'Steht in der Vase'],
+  ['BOOT', 'Kleines Wasserfahrzeug'],
+  ['BRIEF', 'Kommt per Post im Umschlag'],
+  ['BRILLE', 'Sehhilfe auf der Nase'],
+  ['BROT', 'Grundnahrungsmittel vom Bäcker'],
+  ['BRUECKE', 'Führt über einen Fluss'],
+  ['BUCH', 'Hat Seiten und einen Einband'],
+  ['BURG', 'Mittelalterliche Festung'],
+  ['BUTTER', 'Streichfett aus Sahne'],
+  ['CHOR', 'Gruppe von Sängern'],
+  ['DACH', 'Oberer Abschluss eines Hauses'],
+  ['DAMPF', 'Gasförmiges Wasser'],
+  ['DELFIN', 'Kluges Meeressäugetier'],
+  ['DORF', 'Kleine Ortschaft'],
+  ['DRACHE', 'Fabelwesen oder Fluggerät aus Stoff'],
+  ['DUSCHE', 'Hier wäscht man sich im Stehen'],
+  ['EICHE', 'Laubbaum, aus dessen Holz man Fässer baut'],
+  ['EIMER', 'Gefäß mit Henkel'],
+  ['EIS', 'Gefrorenes Wasser'],
+  ['ELCH', 'Großer Hirsch Skandinaviens'],
+  ['ENGEL', 'Himmlisches Wesen mit Flügeln'],
+  ['ENTE', 'Wasservogel, der quakt'],
+  ['ERBSE', 'Grünes Hülsenfrüchtchen'],
+  ['ERDE', 'Unser Planet'],
+  ['ESEL', 'Graues Lasttier'],
+  ['EULE', 'Nachtaktiver Vogel'],
+  ['FADEN', 'Wird durchs Nadelöhr gefädelt'],
+  ['FAHNE', 'Weht am Mast'],
+  ['FALKE', 'Schneller Greifvogel'],
+  ['FARBE', 'Rot oder Blau zum Beispiel'],
+  ['FEDER', 'Bedeckt den Vogel'],
+  ['FENSTER', 'Glasöffnung in der Wand'],
+  ['FERIEN', 'Schulfreie Zeit'],
+  ['FEUER', 'Brennt und wärmt'],
+  ['FISCH', 'Atmet mit Kiemen'],
+  ['FLASCHE', 'Behälter mit engem Hals'],
+  ['FLOH', 'Springendes Insekt im Fell'],
+  ['FLUSS', 'Großes fließendes Gewässer'],
+  ['FORELLE', 'Speisefisch aus dem Bach'],
+  ['FROSCH', 'Quakt am Teich'],
+  ['FUCHS', 'Schlaues rotes Raubtier'],
+  ['GABEL', 'Besteckteil mit Zinken'],
+  ['GANS', 'Wird traditionell zu Martini gegessen'],
+  ['GARTEN', 'Grünfläche am Haus'],
+  ['GEIGE', 'Streichinstrument'],
+  ['GELD', 'Zahlungsmittel'],
+  ['GIPFEL', 'Höchster Punkt eines Berges'],
+  ['GITARRE', 'Saiteninstrument mit sechs Saiten'],
+  ['GLAS', 'Durchsichtiges Material'],
+  ['GLOCKE', 'Läutet im Kirchturm'],
+  ['GOLD', 'Edelmetall, chemisches Zeichen Au'],
+  ['GRAS', 'Wächst auf der Wiese'],
+  ['HAFEN', 'Hier legen Schiffe an'],
+  ['HAGEL', 'Niederschlag aus Eiskörnern'],
+  ['HAHN', 'Kräht am Morgen'],
+  ['HAMMER', 'Werkzeug für Nägel'],
+  ['HASE', 'Hat lange Ohren'],
+  ['HAUS', 'Gebäude zum Wohnen'],
+  ['HEFT', 'Dünnes Buch für die Schule'],
+  ['HERBST', 'Jahreszeit mit fallenden Blättern'],
+  ['HERZ', 'Pumpt das Blut'],
+  ['HIMMEL', 'Ist bei schönem Wetter blau'],
+  ['HONIG', 'Süßes von der Biene'],
+  ['HOSE', 'Kleidungsstück für die Beine'],
+  ['HOTEL', 'Unterkunft auf Reisen'],
+  ['HUND', 'Bester Freund des Menschen'],
+  ['HUT', 'Kopfbedeckung mit Krempe'],
+  ['IGEL', 'Stacheliges Tier'],
+  ['INSEL', 'Land, rundum von Wasser umgeben'],
+  ['JACKE', 'Wird über dem Pullover getragen'],
+  ['JAGD', 'Pirsch auf Wild'],
+  ['KAFFEE', 'Wachmacher am Morgen'],
+  ['KAKAO', 'Schokoladengetränk'],
+  ['KAMEL', 'Wüstentier mit Höckern'],
+  ['KAMM', 'Hilft beim Frisieren'],
+  ['KANAL', 'Künstliche Wasserstraße'],
+  ['KANNE', 'Gefäß für Tee oder Kaffee'],
+  ['KARTE', 'Wird beim Skat ausgeteilt'],
+  ['KATZE', 'Schnurrendes Haustier'],
+  ['KERZE', 'Wachslicht mit Docht'],
+  ['KETTE', 'Schmuck um den Hals'],
+  ['KINO', 'Hier laufen Filme'],
+  ['KIRCHE', 'Gotteshaus'],
+  ['KIRSCHE', 'Rote Steinfrucht'],
+  ['KISSEN', 'Liegt im Bett unter dem Kopf'],
+  ['KLEE', 'Glücksbringer mit vier Blättern'],
+  ['KNOCHEN', 'Teil des Skeletts'],
+  ['KOCH', 'Arbeitet in der Küche'],
+  ['KOFFER', 'Gepäckstück mit Griff'],
+  ['KOHL', 'Gemüse, auch als Sauerkraut'],
+  ['KRONE', 'Trägt der König'],
+  ['KUCHEN', 'Gebäck zum Kaffee'],
+  ['KUH', 'Gibt Milch'],
+  ['LAMPE', 'Spendet Licht'],
+  ['LEITER', 'Hat Sprossen zum Hochsteigen'],
+  ['LEOPARD', 'Gefleckte Raubkatze'],
+  ['LIED', 'Wird gesungen'],
+  ['LOEWE', 'König der Tiere'],
+  ['LUFT', 'Das atmen wir'],
+  ['MAUS', 'Kleiner Nager oder Computerzubehör'],
+  ['MEER', 'Großes Salzwasser'],
+  ['MESSER', 'Schneidet'],
+  ['MILCH', 'Weißes Getränk von der Kuh'],
+  ['MOND', 'Leuchtet nachts am Himmel'],
+  ['MOTOR', 'Treibt das Auto an'],
+  ['MUEHLE', 'Mahlt Getreide'],
+  ['MUSCHEL', 'Findet man am Strand'],
+  ['NACHT', 'Gegenteil von Tag'],
+  ['NADEL', 'Zum Nähen'],
+  ['NAGEL', 'Wird in die Wand geschlagen'],
+  ['NASE', 'Riechorgan'],
+  ['NEBEL', 'Trübe Luft am Morgen'],
+  ['NEST', 'Brutstätte der Vögel'],
+  ['NUDEL', 'Teigware, zum Beispiel Spaghetti'],
+  ['OFEN', 'Hier wird gebacken'],
+  ['OHR', 'Hörorgan'],
+  ['OLIVE', 'Frucht, aus der Öl gepresst wird'],
+  ['ONKEL', 'Bruder der Mutter oder des Vaters'],
+  ['OPER', 'Musiktheater'],
+  ['ORANGE', 'Zitrusfrucht'],
+  ['OSTERN', 'Fest mit bunten Eiern'],
+  ['PALME', 'Baum am Südseestrand'],
+  ['PAPIER', 'Darauf schreibt man'],
+  ['PARK', 'Öffentliche Grünanlage'],
+  ['PFERD', 'Reittier'],
+  ['PILOT', 'Fliegt das Flugzeug'],
+  ['PILZ', 'Wächst im Wald, mancher ist giftig'],
+  ['PINSEL', 'Werkzeug des Malers'],
+  ['PIRAT', 'Seeräuber'],
+  ['PIZZA', 'Italienisches Fladengericht'],
+  ['PUPPE', 'Spielzeug in Menschengestalt'],
+  ['QUELLE', 'Ursprung eines Baches'],
+  ['RABE', 'Schwarzer Vogel'],
+  ['RAD', 'Rundes Teil am Fahrzeug'],
+  ['RADIO', 'Empfängt Sender'],
+  ['RATTE', 'Großer Nager'],
+  ['REGEN', 'Fällt aus den Wolken'],
+  ['REH', 'Scheues Waldtier'],
+  ['REIS', 'Getreide aus Asien'],
+  ['RING', 'Schmuck am Finger'],
+  ['RITTER', 'Kämpfer in Rüstung'],
+  ['ROSE', 'Blume mit Dornen'],
+  ['SALZ', 'Würzt die Suppe'],
+  ['SAND', 'Liegt am Strand'],
+  ['SCHAF', 'Liefert Wolle'],
+  ['SCHERE', 'Schneidet Papier'],
+  ['SCHIFF', 'Großes Wasserfahrzeug'],
+  ['SCHNEE', 'Weißer Winterniederschlag'],
+  ['SCHULE', 'Ort des Lernens'],
+  ['SEIFE', 'Zum Händewaschen'],
+  ['SEIL', 'Starkes Tau'],
+  ['SOFA', 'Polstermöbel'],
+  ['SOMMER', 'Wärmste Jahreszeit'],
+  ['SONNE', 'Stern im Zentrum unseres Systems'],
+  ['SPIEGEL', 'Zeigt dein Abbild'],
+  ['STADT', 'Größer als ein Dorf'],
+  ['STERN', 'Funkelt am Nachthimmel'],
+  ['STORCH', 'Bringt angeblich die Babys'],
+  ['STRAND', 'Sandiges Ufer'],
+  ['STUHL', 'Sitzmöbel mit Lehne'],
+  ['SUPPE', 'Wird mit dem Löffel gegessen'],
+  ['TAFEL', 'Darauf schreibt der Lehrer'],
+  ['TANNE', 'Nadelbaum zu Weihnachten'],
+  ['TASSE', 'Trinkgefäß mit Henkel'],
+  ['TEE', 'Heißgetränk aus Blättern'],
+  ['TELLER', 'Darauf liegt das Essen'],
+  ['TIGER', 'Gestreifte Raubkatze'],
+  ['TISCH', 'Möbel mit vier Beinen'],
+  ['TOMATE', 'Rotes Gemüse'],
+  ['TOR', 'Großer Eingang oder Treffer beim Fußball'],
+  ['TRAUM', 'Erlebnis im Schlaf'],
+  ['TREPPE', 'Führt nach oben'],
+  ['TROMMEL', 'Schlaginstrument'],
+  ['TULPE', 'Frühlingsblume aus Holland'],
+  ['TURM', 'Hohes, schmales Bauwerk'],
+  ['UHR', 'Zeigt die Zeit'],
+  ['UFER', 'Rand eines Gewässers'],
+  ['URLAUB', 'Freie Zeit vom Job'],
+  ['VASE', 'Gefäß für Blumen'],
+  ['VOGEL', 'Tier mit Federn'],
+  ['VULKAN', 'Feuerspeiender Berg'],
+  ['WAAGE', 'Misst das Gewicht'],
+  ['WAGEN', 'Fahrzeug'],
+  ['WALD', 'Viele Bäume beisammen'],
+  ['WAL', 'Größtes Tier der Meere'],
+  ['WASSER', 'H2O'],
+  ['WECKER', 'Klingelt morgens'],
+  ['WEIN', 'Getränk aus Trauben'],
+  ['WELLE', 'Bewegung im Meer'],
+  ['WIESE', 'Grünland mit Blumen'],
+  ['WINTER', 'Kälteste Jahreszeit'],
+  ['WOLF', 'Heult den Mond an'],
+  ['WOLKE', 'Schwebt am Himmel'],
+  ['WOLLE', 'Garn vom Schaf'],
+  ['WURST', 'Fleischware in der Pelle'],
+  ['WUERFEL', 'Hat sechs Seiten mit Augen'],
+  ['WUESTE', 'Trockene Sandlandschaft'],
+  ['ZAHN', 'Zum Beißen'],
+  ['ZEBRA', 'Gestreiftes Pferd Afrikas'],
+  ['ZELT', 'Unterkunft beim Camping'],
+  ['ZIEGE', 'Meckerndes Haustier'],
+  ['ZIMMER', 'Raum in der Wohnung'],
+  ['ZITRONE', 'Saure gelbe Frucht'],
+  ['ZUCKER', 'Macht den Kaffee süß'],
+  ['ZUG', 'Fährt auf Gleisen'],
+  ['ZWERG', 'Kleiner Kerl im Märchen'],
+  ['ZWIEBEL', 'Bringt beim Schneiden zum Weinen'],
+  ['ALPEN', 'Höchstes Gebirge Europas'],
+  ['BERLIN', 'Hauptstadt Deutschlands'],
+  ['ELBE', 'Fluss durch Dresden und Hamburg'],
+  ['RHEIN', 'Fluss an der Loreley'],
+  ['DONAU', 'Fluss durch Wien'],
+  ['ROM', 'Hauptstadt Italiens'],
+  ['PARIS', 'Stadt des Eiffelturms'],
+  ['WIEN', 'Hauptstadt Österreichs'],
+  ['MADRID', 'Hauptstadt Spaniens'],
+  ['OSLO', 'Hauptstadt Norwegens'],
+  ['NIL', 'Längster Fluss Afrikas'],
+  ['MARS', 'Der rote Planet'],
+  ['VENUS', 'Planet, benannt nach der Liebesgöttin'],
+  ['SATURN', 'Planet mit auffälligen Ringen'],
+  ['SCHACH', 'Brettspiel mit König und Dame'],
+  ['DOMINO', 'Spielsteine mit Augen, die man umkippen lässt'],
+  ['KALENDER', 'Zeigt die Tage des Jahres'],
+  ['MONTAG', 'Erster Tag der Arbeitswoche'],
+  ['FREITAG', 'Letzter Arbeitstag der Woche'],
+  ['SONNTAG', 'Siebter Tag der Woche'],
+  ['RAETSEL', 'Zum Knobeln da'],
+  ['SUDOKU', 'Zahlenrätsel mit 81 Feldern'],
+  ['LOGIK', 'Lehre vom folgerichtigen Denken'],
+  ['ZAHL', 'Eins, zwei oder drei'],
+  ['NULL', 'Zahl vor der Eins'],
+  ['ELF', 'Mannschaftsstärke im Fußball'],
+  ['ZWOELF', 'Ein Dutzend'],
+  ['OKTOBER', 'Zehnter Monat des Jahres'],
+  ['JANUAR', 'Erster Monat des Jahres'],
+  ['MAI', 'Wonnemonat'],
+  ['APRIL', 'Monat, der macht, was er will'],
+  ['ADVENT', 'Vorweihnachtszeit'],
+  ['GEBURTSTAG', 'Jährlicher Ehrentag'],
+  ['TORTE', 'Feiner Kuchen mit Füllung'],
+  ['GESCHENK', 'Wird eingepackt überreicht'],
+  ['BALLON', 'Wird aufgeblasen'],
+  ['ECHO', 'Ruft zurück, was du rufst'],
+  ['SCHATTEN', 'Folgt dir in der Sonne'],
+  ['KOMPASS', 'Zeigt nach Norden'],
+  ['LEUCHTTURM', 'Weist Schiffen den Weg'],
+  ['ANANAS', 'Tropische Frucht mit Schopf'],
+  ['MELONE', 'Große, saftige Frucht'],
+  ['KARTOFFEL', 'Knolle für Pommes'],
+  ['GURKE', 'Grünes Gemüse, auch sauer eingelegt'],
+  ['PAPRIKA', 'Schote in Rot, Gelb oder Grün'],
+  ['SPINAT', 'Popeyes Lieblingsgemüse'],
+  ['KAESE', 'Wird aus Milch gereift'],
+  ['ESSIG', 'Saure Würze'],
+  ['SENF', 'Gehört auf die Bratwurst'],
+  ['PFEFFER', 'Scharfes Gewürz'],
+  ['TEIG', 'Wird geknetet'],
+  ['MEHL', 'Gemahlenes Getreide'],
+  ['HEFE', 'Lässt den Teig aufgehen']
+];
+
+</script>
+<script>/* data/riddles.js */
+/* Rätsel: q = Frage, a = Lösung, alt = weitere akzeptierte Antworten */
+window.KK = window.KK || {};
+window.KK.RIDDLES = [
+  { q: 'Ich fliege hoch, bin oft weiß, manchmal grau und voller Regen. Wind schiebt mich vor sich her. Was bin ich?', a: 'Wolke', alt: ['Wolken', 'Regenwolke'] },
+  { q: 'Je mehr du davon wegnimmst, desto größer wird es. Was ist es?', a: 'Loch', alt: ['ein Loch', 'Grube'] },
+  { q: 'Ich habe Hände, aber kann nicht klatschen. Ich habe ein Gesicht, aber keine Augen. Was bin ich?', a: 'Uhr', alt: ['Wanduhr', 'Armbanduhr', 'Standuhr'] },
+  { q: 'Ich laufe ständig, habe aber keine Beine. Ich habe ein Bett, schlafe aber nie. Was bin ich?', a: 'Fluss', alt: ['Bach', 'Strom'] },
+  { q: 'Was wird nasser, je mehr es trocknet?', a: 'Handtuch', alt: ['Tuch', 'Badetuch', 'Geschirrtuch'] },
+  { q: 'Ich folge dir überall hin, aber im Dunkeln verschwinde ich. Was bin ich?', a: 'Schatten', alt: ['dein Schatten'] },
+  { q: 'Man kann mich brechen, ohne mich anzufassen. Was bin ich?', a: 'Versprechen', alt: ['Schweigen', 'Rekord', 'Wort'] },
+  { q: 'Ich habe Schlüssel, aber kein Schloss öffne ich. Was bin ich?', a: 'Klavier', alt: ['Tastatur', 'Piano', 'Keyboard'] },
+  { q: 'Was hat viele Zähne, beißt aber nie?', a: 'Kamm', alt: ['Säge', 'Reißverschluss', 'Zahnrad'] },
+  { q: 'Ich gehöre dir, aber andere benutzen mich viel öfter als du. Was bin ich?', a: 'Name', alt: ['dein Name', 'Vorname'] },
+  { q: 'Was geht hoch und runter, bewegt sich aber nicht von der Stelle?', a: 'Treppe', alt: ['Treppenhaus', 'Stufen', 'Temperatur'] },
+  { q: 'Ich habe einen Hals, aber keinen Kopf, und trage oft einen Korken als Hut. Was bin ich?', a: 'Flasche', alt: ['Weinflasche'] },
+  { q: 'Was ist voller Löcher und hält trotzdem Wasser?', a: 'Schwamm', alt: ['ein Schwamm'] },
+  { q: 'Ich werde kürzer, je länger ich lebe, und weine dabei Wachs. Was bin ich?', a: 'Kerze', alt: ['eine Kerze'] },
+  { q: 'Was hat ein Auge, kann aber nicht sehen?', a: 'Nadel', alt: ['Nähnadel', 'Sturm', 'Hurrikan', 'Wirbelsturm'] },
+  { q: 'Ich bin immer vor dir, aber du kannst mich nie sehen. Was bin ich?', a: 'Zukunft', alt: ['die Zukunft', 'Morgen'] },
+  { q: 'Was kann reisen, um die ganze Welt, und bleibt dabei immer in seiner Ecke?', a: 'Briefmarke', alt: ['Marke'] },
+  { q: 'Je mehr es davon gibt, desto weniger siehst du. Was ist es?', a: 'Dunkelheit', alt: ['Nebel', 'Finsternis', 'Dunkel'] },
+  { q: 'Ich habe Städte, aber keine Häuser, Wälder, aber keine Bäume, und Wasser, aber keine Fische. Was bin ich?', a: 'Landkarte', alt: ['Karte', 'Atlas', 'Stadtplan'] },
+  { q: 'Ich spreche ohne Mund und höre ohne Ohren. Ich habe keinen Körper, aber der Wind weckt mich. Ich antworte dir in den Bergen. Was bin ich?', a: 'Echo', alt: ['Widerhall'] },
+  { q: 'Was hat vier Beine am Morgen, zwei am Mittag und drei am Abend?', a: 'Mensch', alt: ['der Mensch'] },
+  { q: 'Was ist schwarz, wenn du es kaufst, rot, wenn du es benutzt, und grau, wenn du es wegwirfst?', a: 'Kohle', alt: ['Holzkohle', 'Grillkohle'] },
+  { q: 'Ich bin leicht wie eine Feder, aber selbst der Stärkste kann mich nicht lange halten. Was bin ich?', a: 'Atem', alt: ['Luft', 'Atemzug', 'Luft anhalten'] },
+  { q: 'Was hat Blätter, ist aber kein Baum?', a: 'Buch', alt: ['Heft', 'Zeitung', 'Kalender'] },
+  { q: 'Was kann man fangen, aber nicht werfen?', a: 'Erkältung', alt: ['Schnupfen', 'Grippe', 'Virus', 'Krankheit'] },
+  { q: 'Was springt höher als ein Haus?', a: 'Alles', alt: ['jedes Tier', 'Floh', 'Mensch'], note: 'Häuser können nicht springen.' },
+  { q: 'Was hat einen Bauch, aber keinen Rücken, und klingt, wenn man draufschlägt?', a: 'Trommel', alt: ['Pauke', 'Glocke'] },
+  { q: 'Es kommt einmal in jeder Minute, zweimal in jedem Moment, aber nie in tausend Jahren. Was ist es?', a: 'M', alt: ['Buchstabe M', 'der Buchstabe M'] },
+  { q: 'Was wird größer, je mehr du teilst?', a: 'Freude', alt: ['Glück', 'Liebe', 'Wissen'] },
+  { q: 'Ich habe Flügel, aber bin kein Vogel. Ich drehe mich im Wind und mahle Korn. Was bin ich?', a: 'Windmühle', alt: ['Mühle', 'Windrad'] },
+  { q: 'Was zerbricht, sobald du seinen Namen aussprichst?', a: 'Stille', alt: ['Schweigen', 'Ruhe'] },
+  { q: 'Ich bin weiß, wenn ich schmutzig bin, und schwarz, wenn ich sauber bin. Was bin ich?', a: 'Tafel', alt: ['Schultafel', 'Kreidetafel'] },
+  { q: 'Wer es macht, braucht es nicht. Wer es kauft, will es nicht. Wer es benutzt, merkt es nicht. Was ist es?', a: 'Sarg', alt: ['ein Sarg'] },
+  { q: 'Was hat ein Bett, aber schläft nie, und einen Mund, aber spricht nie?', a: 'Fluss', alt: ['Strom'] },
+  { q: 'Was liegt im Winter auf der Wiese, ist weiß und taut im Frühling weg?', a: 'Schnee', alt: ['Schneedecke'] },
+  { q: 'Welches Tier hat seinen Kopf in der Mitte?', a: 'Seestern', alt: ['Qualle'], note: 'Beim Seestern sitzt der Mund in der Mitte der Unterseite.' },
+  { q: 'Ich habe tausend Nadeln, aber nähe nie. Im Dezember stehe ich im Wohnzimmer. Was bin ich?', a: 'Tannenbaum', alt: ['Weihnachtsbaum', 'Tanne', 'Christbaum', 'Fichte'] },
+  { q: 'Was ist am Ende von allem?', a: 'S', alt: ['Buchstabe S', 'der Buchstabe S'], note: 'Das Wort „alles“ endet auf S.' },
+  { q: 'Ich habe Wurzeln, die niemand sieht, bin größer als ein Baum und wachse doch nie. Was bin ich?', a: 'Berg', alt: ['Gebirge'] },
+  { q: 'Was kann man nicht sehen, aber jeder hat es schon gespürt, und es lässt Drachen steigen?', a: 'Wind', alt: ['Luft'] },
+  { q: 'Was hat zwei Beine, aber kann nicht laufen, und ist meistens in der Waschmaschine?', a: 'Hose', alt: ['Jeans'] },
+  { q: 'Was kommt herunter, aber nie wieder hinauf?', a: 'Regen', alt: ['Regentropfen', 'Niederschlag', 'Schnee'] },
+  { q: 'Ich habe Seiten, aber keine Ecken, wenn ich zugeschlagen bin. Man liest in mir. Was bin ich?', a: 'Buch', alt: ['Roman'] },
+  { q: 'Welche Woche hat nur sechs Tage?', a: 'Keine', alt: ['gar keine', 'Karwoche'], note: 'Jede Woche hat sieben Tage.' },
+  { q: 'Ich bin in der Mitte von Paris, aber nicht in Berlin. Was bin ich?', a: 'R', alt: ['Buchstabe R', 'der Buchstabe R'] },
+  { q: 'Was hat Augen, aber sieht nichts, und kommt in Pommes vor?', a: 'Kartoffel', alt: ['Kartoffeln'] },
+  { q: 'Was wächst, wenn es Futter bekommt, und stirbt, wenn es Wasser trinkt?', a: 'Feuer', alt: ['Flamme'] },
+  { q: 'Wenn du mich hast, willst du mich teilen. Wenn du mich teilst, hast du mich nicht mehr. Was bin ich?', a: 'Geheimnis', alt: ['ein Geheimnis'] },
+  { q: 'Was hat einen Daumen und vier Finger, ist aber nicht lebendig?', a: 'Handschuh', alt: ['Handschuhe'] },
+  { q: 'Ich gehe durch die Stadt, durch das Feld, über jeden Hügel und bleibe doch an meinem Platz. Was bin ich?', a: 'Straße', alt: ['Weg', 'Strasse', 'Pfad'] },
+  { q: 'Was kann man halten, ohne es je zu berühren?', a: 'Versprechen', alt: ['Rede', 'Vortrag', 'Wort', 'Atem'] },
+  { q: 'Welches Wort wird immer falsch geschrieben?', a: 'falsch', alt: ['Falsch'] },
+  { q: 'Was dreht sich, ohne sich zu bewegen, und sorgt für Tag und Nacht?', a: 'Erde', alt: ['Erdkugel', 'Welt', 'Planet'] },
+  { q: 'Ich habe Zeiger, aber zeige nicht mit dem Finger. Ich habe Ziffern, aber rechne nie. Was bin ich?', a: 'Uhr', alt: ['Wanduhr'] },
+  { q: 'Was ist größer als Gott, schlimmer als der Teufel, die Armen haben es, die Reichen brauchen es, und wer es isst, stirbt?', a: 'Nichts', alt: ['nix', 'das Nichts'] },
+  { q: 'Zwei Väter und zwei Söhne gehen angeln. Jeder fängt genau einen Fisch, und trotzdem sind es nur drei Fische. Wie viele Personen sind es?', a: 'Drei', alt: ['3', 'drei Personen', 'Großvater, Vater und Sohn'] },
+  { q: 'Eine Mutter hat fünf Töchter. Jede Tochter hat einen Bruder. Wie viele Kinder hat die Mutter?', a: 'Sechs', alt: ['6', 'sechs Kinder'] },
+  { q: 'Was ist schwerer: ein Kilo Federn oder ein Kilo Eisen?', a: 'Gleich schwer', alt: ['gleich', 'beide gleich', 'keins', 'beides', 'gleichschwer'] },
+  { q: 'Ein Hahn legt ein Ei genau auf die Dachspitze. Auf welche Seite rollt es?', a: 'Keine', alt: ['gar keine', 'Hähne legen keine Eier', 'nirgends', 'Hahn legt keine Eier'] },
+  { q: 'Wie viele Monate haben 28 Tage?', a: 'Alle', alt: ['zwölf', '12', 'alle zwölf', 'jeder'] },
+  { q: 'Ein Flugzeug stürzt genau auf der Grenze zwischen Deutschland und Österreich ab. Wo werden die Überlebenden begraben?', a: 'Gar nicht', alt: ['nirgends', 'nirgendwo', 'Überlebende begräbt man nicht', 'keine'] },
+  { q: 'Was hat ein Gesicht und zwei Hände, aber keine Arme und keine Beine?', a: 'Uhr', alt: ['Wanduhr'] },
+  { q: 'Ich bin ein Haus aus Glas, darin wohnt ein Licht, das man an- und ausknipst. Was bin ich?', a: 'Glühbirne', alt: ['Lampe', 'Birne', 'Glühlampe'] },
+  { q: 'Was hat Schuppen, aber ist kein Fisch, und wächst auf dem Kopf?', a: 'Haare', alt: ['Kopfhaut', 'Haar'] },
+  { q: 'Was geht durchs Glas, ohne es zu zerbrechen?', a: 'Licht', alt: ['Sonnenlicht', 'Lichtstrahl', 'Sonnenstrahl'] },
+  { q: 'Morgens kommt sie, abends geht sie, mittags steht sie am höchsten. Wer ist sie?', a: 'Sonne', alt: ['die Sonne'] },
+  { q: 'Ich bin schwarz und weiß gestreift und kein Zebra. Autos halten an mir an. Was bin ich?', a: 'Zebrastreifen', alt: ['Fußgängerüberweg', 'Überweg'] },
+  { q: 'Was hat Ohren, aber hört nichts, und wächst auf dem Feld?', a: 'Mais', alt: ['Maiskolben', 'Getreide', 'Weizen'] },
+  { q: 'Was ist immer unterwegs, kommt aber nie an?', a: 'Morgen', alt: ['der morgige Tag', 'Zukunft', 'Horizont'] },
+  { q: 'Ich bin rund wie ein Teller, hell in der Nacht und manchmal nur eine Sichel. Was bin ich?', a: 'Mond', alt: ['Vollmond', 'der Mond'] },
+  { q: 'Was hat ein Herz, das nicht schlägt?', a: 'Artischocke', alt: ['Salat', 'Kopfsalat', 'Stein'] },
+  { q: 'Was fällt, ohne sich je zu verletzen?', a: 'Regen', alt: ['Schnee', 'Laub', 'Blätter', 'Nacht'] },
+  { q: 'Je wärmer es wird, desto kleiner werde ich, bis ich nur noch eine Pfütze bin. Was bin ich?', a: 'Eiswürfel', alt: ['Eis', 'Schneemann', 'Eiszapfen'] }
+];
+
+</script>
+<script>/* data/brands.js */
+/* Markenraten: drei Hinweise von vage bis eindeutig.
+   a = Lösung, alt = weitere akzeptierte Schreibweisen */
+window.KK = window.KK || {};
+window.KK.BRANDS = [
+  { a: 'IKEA', h: ['Ein Unternehmen aus Schweden, gegründet 1943.', 'Im Restaurant gibt es Köttbullar.', 'Möbel zum Selberaufbauen, Regal „Billy“, Inbusschlüssel inklusive.'] },
+  { a: 'Adidas', h: ['Sitz in Herzogenaurach in Franken.', 'Der Gründer hieß mit Spitznamen Adi.', 'Sportmarke mit den drei Streifen.'] },
+  { a: 'Puma', h: ['Ebenfalls aus Herzogenaurach.', 'Gegründet von Rudolf Dassler, dem Bruder eines anderen Sportschuh-Gründers.', 'Sportmarke, benannt nach einer Raubkatze.'] },
+  { a: 'Haribo', h: ['Süßwarenhersteller, ursprünglich aus Bonn.', 'Der Name setzt sich aus Gründername und Stadt zusammen: Hans Riegel, Bonn.', 'Berühmt für Goldbären.'] },
+  { a: 'Lego', h: ['Spielzeughersteller aus Billund in Dänemark.', 'Der Name kommt von „leg godt“, dänisch für „spiel gut“.', 'Bunte Klemmbausteine, auf die man nachts barfuß tritt.'] },
+  { a: 'Nivea', h: ['Gehört zu Beiersdorf aus Hamburg.', 'Der Name kommt vom lateinischen Wort für „schneeweiß“.', 'Die Creme in der runden blauen Dose.'] },
+  { a: 'Tempo', h: ['Seit 1929 auf dem Markt.', 'Der Markenname ist in Deutschland zum Allgemeinbegriff geworden.', 'Papiertaschentücher.'] },
+  { a: 'Coca-Cola', alt: ['Coca Cola', 'Cola', 'Coke'], h: ['Erfunden 1886 in Atlanta.', 'Der Erfinder war der Apotheker John Pemberton.', 'Braune Limonade in der roten Dose.'] },
+  { a: 'Fanta', h: ['Entstand 1940 in Deutschland.', 'Gehört zum gleichen Konzern wie die bekannteste Cola der Welt.', 'Orangenlimonade.'] },
+  { a: 'Apple', h: ['Gegründet 1976 in Kalifornien.', 'Die Gründer hießen Steve Jobs und Steve Wozniak.', 'Hersteller von iPhone und Mac.'] },
+  { a: 'Microsoft', h: ['Sitz in Redmond bei Seattle.', 'Gegründet 1975 von Bill Gates und Paul Allen.', 'Hersteller von Windows und Office.'] },
+  { a: 'Google', h: ['Gegründet 1998 von Larry Page und Sergey Brin.', 'Der Name spielt auf „Googol“ an, eine 1 mit hundert Nullen.', 'Die meistgenutzte Suchmaschine der Welt.'] },
+  { a: 'Amazon', h: ['Gegründet 1994 in Seattle.', 'Fing als Online-Buchhandlung an.', 'Benannt nach dem wasserreichsten Fluss der Erde, Gründer Jeff Bezos.'] },
+  { a: 'Nintendo', h: ['Ein Unternehmen aus Kyoto in Japan.', 'Fing 1889 mit Spielkarten an.', 'Spielkonsolen wie Game Boy und Switch.'] },
+  { a: 'Sony', h: ['Elektronikkonzern aus Tokio.', 'Brachte 1979 den Walkman heraus.', 'Hersteller der PlayStation.'] },
+  { a: 'Samsung', h: ['Großkonzern aus Südkorea.', 'Der Name bedeutet „drei Sterne“.', 'Smartphones der Galaxy-Reihe.'] },
+  { a: 'Nokia', h: ['Unternehmen aus Finnland.', 'Begann 1865 als Papiermühle.', 'Handy-Weltmarktführer um 2000, bekannt für das Spiel „Snake“.'] },
+  { a: 'BMW', h: ['Autohersteller aus München.', 'Baute ursprünglich Flugzeugmotoren.', 'Die Abkürzung steht für Bayerische Motoren Werke.'] },
+  { a: 'Mercedes-Benz', alt: ['Mercedes', 'Mercedes Benz', 'Daimler'], h: ['Autohersteller aus Stuttgart.', 'Benannt nach der Tochter des Geschäftsmanns Emil Jellinek.', 'Der Stern auf der Motorhaube.'] },
+  { a: 'Volkswagen', alt: ['VW'], h: ['Sitz in Wolfsburg.', 'Der Name sagt: ein Auto fürs ganze Volk.', 'Käfer, Golf und Bulli.'] },
+  { a: 'Porsche', h: ['Sportwagen aus Stuttgart-Zuffenhausen.', 'Gründer Ferdinand war auch an der Entwicklung des Käfers beteiligt.', 'Der Klassiker heißt 911.'] },
+  { a: 'Audi', h: ['Autohersteller aus Ingolstadt.', 'Der Name ist die lateinische Übersetzung von „Horch“, dem Namen des Gründers.', 'Das Logo zeigt vier Ringe.'] },
+  { a: 'Ferrari', h: ['Sportwagen aus Maranello in Italien.', 'Das Wappentier ist ein springendes Pferd.', 'In der Formel 1 traditionell knallrot.'] },
+  { a: 'Tesla', h: ['Autohersteller, gegründet 2003 in Kalifornien.', 'Benannt nach einem serbisch-amerikanischen Erfinder.', 'Elektroautos, Werk in Grünheide bei Berlin.'] },
+  { a: 'Nutella', h: ['Kommt aus Italien, seit 1964 im Glas.', 'Hergestellt von Ferrero.', 'Nuss-Nougat-Creme fürs Brötchen.'] },
+  { a: 'Ritter Sport', alt: ['Ritter'], h: ['Schokolade aus Waldenbuch bei Stuttgart.', 'Passt in jede Jackentasche, ohne zu zerbrechen – so die Idee.', 'Die quadratische Tafel.'] },
+  { a: 'Milka', h: ['Schokolade mit Schweizer Wurzeln, heute bei Lörrach produziert.', 'Der Name setzt sich aus Milch und Kakao zusammen.', 'Die lila Kuh.'] },
+  { a: 'Toblerone', h: ['Schweizer Schokolade aus Bern.', 'Mit Honig- und Mandelnougat.', 'Die dreieckigen Zacken erinnern an ein Bergpanorama.'] },
+  { a: 'Dr. Oetker', alt: ['Oetker', 'Dr Oetker', 'Doktor Oetker'], h: ['Familienunternehmen aus Bielefeld.', 'Ein Apotheker verkaufte ab 1891 Backpulver in kleinen Tütchen.', 'Pudding, Backzutaten und Tiefkühlpizza.'] },
+  { a: 'Maggi', h: ['Gegründet in der Schweiz von Julius Maggi.', 'Ein Kraut im Garten wird umgangssprachlich nach der Marke benannt.', 'Flüssige Würze aus der braunen Flasche.'] },
+  { a: 'Tesa', h: ['Gehört wie eine bekannte Creme zu Beiersdorf.', 'Der Name ist zum Gattungsbegriff geworden.', 'Durchsichtiger Klebefilm von der Rolle.'] },
+  { a: 'Tupperware', alt: ['Tupper'], h: ['Erfunden von dem US-Amerikaner Earl Tupper.', 'Verkauft wurde lange vor allem auf Partys zu Hause.', 'Frischhaltedosen aus Kunststoff.'] },
+  { a: 'Rolex', h: ['Unternehmen mit Sitz in Genf.', 'Das Markenzeichen ist eine Krone.', 'Eine der bekanntesten Luxusuhren der Welt.'] },
+  { a: 'Nike', h: ['Sitz in Beaverton, Oregon.', 'Benannt nach der griechischen Siegesgöttin.', 'Sportmarke mit dem geschwungenen Haken.'] },
+  { a: "McDonald's", alt: ['McDonalds', 'Mc Donalds', 'Mäcces', 'Mecces'], h: ['Fast-Food-Kette, benannt nach zwei Brüdern.', 'Ray Kroc machte sie zur Weltmarke.', 'Big Mac und das gelbe M.'] },
+  { a: 'Starbucks', h: ['Kaffeehauskette, gegründet 1971 in Seattle.', 'Der Name stammt aus dem Roman „Moby-Dick“.', 'Im Logo ist eine grüne Meerjungfrau.'] },
+  { a: 'Netflix', h: ['Gegründet 1997 in Kalifornien.', 'Verschickte anfangs DVDs per Post.', 'Streamingdienst für Filme und Serien.'] },
+  { a: 'Spotify', h: ['Gegründet 2006 in Stockholm.', 'Gibt es kostenlos mit Werbung oder als Abo.', 'Musik-Streamingdienst mit grünem Logo.'] },
+  { a: 'WhatsApp', alt: ['Whats App'], h: ['Wurde 2014 von Facebook gekauft.', 'Zwei graue Haken heißen „zugestellt“, zwei blaue „gelesen“.', 'Der Messenger mit dem grünen Telefonhörer.'] },
+  { a: 'YouTube', alt: ['You Tube'], h: ['Gegründet 2005, ein Jahr später von Google gekauft.', 'Das erste Video zeigte einen Besuch im Zoo.', 'Das Videoportal mit dem roten Abspielknopf.'] },
+  { a: 'Instagram', h: ['Gestartet 2010, seit 2012 bei Facebook.', 'Anfangs waren alle Fotos quadratisch.', 'Foto-App mit Storys und Reels.'] },
+  { a: 'Lufthansa', h: ['Sitz in Köln, Drehkreuz in Frankfurt.', 'Das Wappentier ist ein Kranich.', 'Die größte deutsche Fluggesellschaft.'] },
+  { a: 'Deutsche Bahn', alt: ['DB', 'Bahn'], h: ['Entstand 1994 aus der Bundesbahn und der Reichsbahn.', 'Bekannt für Verspätungsdurchsagen.', 'Betreibt den ICE.'] },
+  { a: 'Playmobil', h: ['Spielzeug aus Zirndorf bei Nürnberg.', 'Erfunden 1974 von Hans Beck.', 'Die lächelnden Spielfiguren, etwa 7,5 Zentimeter groß.'] },
+  { a: 'Ravensburger', h: ['Verlag aus Oberschwaben.', 'Das Logo ist ein blaues Dreieck in der Ecke der Schachtel.', 'Puzzles und Brettspiele wie „Das verrückte Labyrinth“.'] },
+  { a: 'Faber-Castell', alt: ['Faber Castell', 'Faber'], h: ['Familienunternehmen aus Stein bei Nürnberg, seit 1761.', 'Einer der ältesten Industriebetriebe der Welt.', 'Bleistifte und Buntstifte.'] },
+  { a: 'Bosch', h: ['Gegründet 1886 in Stuttgart.', 'Der Gründer hieß mit Vornamen Robert.', 'Zündkerzen, Bohrmaschinen und Kühlschränke.'] },
+  { a: 'Siemens', h: ['Gegründet 1847 in Berlin.', 'Der Gründer Werner baute einen Zeigertelegrafen.', 'Technologiekonzern mit Sitz in München.'] },
+  { a: 'Miele', h: ['Familienunternehmen aus Gütersloh.', 'Gegründet 1899 von Carl Miele und Reinhard Zinkann.', 'Waschmaschinen, die ewig halten sollen.'] },
+  { a: 'Aldi', h: ['Discounter, gegründet von zwei Brüdern.', 'Aufgeteilt in Nord und Süd.', 'Der Name steht für Albrecht Discount.'] },
+  { a: 'Lidl', h: ['Discounter aus Neckarsulm.', 'Gehört zur Schwarz-Gruppe, wie Kaufland.', 'Blau-gelbes Logo mit rotem Rand.'] },
+  { a: 'Tchibo', h: ['Unternehmen aus Hamburg, gegründet 1949.', 'Jede Woche gibt es eine neue Themenwelt mit Haushaltswaren.', 'Kaffee – und Socken, Fahrradhelme und Toaster.'] },
+  { a: 'Red Bull', alt: ['Redbull'], h: ['Unternehmen aus Fuschl am See in Österreich.', 'Besitzt Fußballvereine und ein Formel-1-Team.', 'Energydrink, der angeblich Flügel verleiht.'] },
+  { a: 'Jägermeister', alt: ['Jaegermeister'], h: ['Kommt aus Wolfenbüttel.', 'Ein Kräuterlikör mit 56 Zutaten.', 'Im Logo ein Hirsch mit Kreuz im Geweih.'] },
+  { a: 'Persil', h: ['Gehört zu Henkel aus Düsseldorf, seit 1907.', 'Der Name kommt von zwei Inhaltsstoffen: Perborat und Silikat.', 'Waschmittel.'] },
+  { a: 'Labello', h: ['Ebenfalls von Beiersdorf.', 'Seit 1909 auf dem Markt.', 'Lippenpflegestift.'] },
+  { a: 'Bahlsen', alt: ['Leibniz'], h: ['Keksfabrik aus Hannover.', 'Der bekannteste Keks hat 52 Zähne am Rand.', 'Leibniz-Butterkeks.'] },
+  { a: 'Duden', h: ['Benannt nach dem Gymnasiallehrer Konrad Duden.', 'Erschien zuerst 1880.', 'Das Wörterbuch zur deutschen Rechtschreibung.'] },
+  { a: 'Kinder Schokolade', alt: ['Kinderschokolade', 'Kinder'], h: ['Auch von Ferrero.', 'Auf der Verpackung lächelt ein Junge.', 'Schokoriegel mit Milchfüllung, einzeln verpackt.'] },
+  { a: 'Playstation', alt: ['Play Station', 'PS'], h: ['Erschien zuerst 1994 in Japan.', 'Die Tasten heißen Kreis, Kreuz, Dreieck und Viereck.', 'Die Spielkonsole von Sony.'] },
+  { a: 'Hanuta', h: ['Ebenfalls von Ferrero.', 'Der Name ist eine Abkürzung für „Haselnusstafel“.', 'Zwei Waffeln mit Haselnusscreme dazwischen.'] }
+];
+
+</script>
+<script>/* js/home.js */
+/* Knobelkiste – Startseite */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+
+  var TILES = [
+    { id: 'doomsday', name: 'Wochentag-Trainer', desc: 'Datum sehen, Wochentag im Kopf ausrechnen.', glyph: 'Di' },
+    { id: 'sudoku', name: 'Sudoku', desc: 'Leicht, mittel oder schwer – immer neu.', glyph: '9' },
+    { id: 'kreuzwort', name: 'Kreuzworträtsel', desc: 'Jedes Gitter frisch zusammengewürfelt.', glyph: 'A' },
+    { id: 'galgen', name: 'Galgenmännchen', desc: 'Buchstaben raten, bevor er hängt.', glyph: 'A_' },
+    { id: 'raetsel', name: 'Rätsel', desc: 'Was ist das? Um die Ecke denken.', glyph: '?' },
+    { id: 'marken', name: 'Markenraten', desc: 'Drei Hinweise – je früher, desto mehr Punkte.', glyph: '®' }
+  ];
+
+  KK.modes.home = {
+    title: 'Knobelkiste',
+    mount: function (root) {
+      var hour = new Date().getHours();
+      var greet = hour < 11 ? 'Guten Morgen.' : hour < 18 ? 'Schön, dass du da bist.' : 'Noch eine Runde vorm Schlafen?';
+      root.appendChild(h('section', { class: 'hero' }, [
+        h('p', { class: 'hero-greet', text: greet }),
+        h('h2', { class: 'hero-title' }, ['Worauf hast du ', h('mark', { text: 'Lust' }), '?'])
+      ]));
+
+      var list = h('nav', { class: 'tiles', 'aria-label': 'Spiele' });
+      TILES.forEach(function (t) {
+        var pts = KK.points.get(t.id);
+        list.appendChild(h('button', {
+          class: 'tile tile-' + t.id,
+          onclick: function () { KK.go(t.id); }
+        }, [
+          h('span', { class: 'tile-glyph', 'aria-hidden': 'true', text: t.glyph }),
+          h('span', { class: 'tile-body' }, [
+            h('span', { class: 'tile-name', text: t.name }),
+            h('span', { class: 'tile-desc', text: t.desc })
+          ]),
+          h('span', { class: 'tile-pts', text: pts + ' P' })
+        ]));
+      });
+      root.appendChild(list);
+
+      root.appendChild(h('p', { class: 'foot' }, [
+        'Punkte bleiben auf diesem Gerät gespeichert. ',
+        h('button', {
+          class: 'linkish',
+          text: 'Alles zurücksetzen',
+          onclick: function () {
+            if (window.confirm('Alle Punkte und Spielstände löschen?')) {
+              ['points', 'doomsday.stats', 'sudoku.game', 'sudoku.stats', 'kreuzwort.game', 'raetsel.state', 'galgen.game', 'marken.state'].forEach(KK.store.remove);
+              KK.toast('Alles zurückgesetzt');
+              KK.modes.home.mount((root.innerHTML = '', root));
+              KK.renderTotal();
+            }
+          }
+        })
+      ]));
+    }
+  };
+})();
+
+</script>
+<script>/* js/doomsday.js */
+/* Knobelkiste – Wochentag-Trainer nach der Doomsday-Methode */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+
+  var DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  var ORDER = [1, 2, 3, 4, 5, 6, 0]; // Anzeige Montag … Sonntag
+  var MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  var RANGES = {
+    all: { from: 1900, to: 2100, label: '1900–2100' },
+    c20: { from: 1900, to: 1999, label: '1900–1999' },
+    c21: { from: 2000, to: 2099, label: '2000–2099' }
+  };
+
+  // ---- Rechnen ----
+  function isLeap(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+  function daysIn(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); } // m: 1–12
+  function weekday(y, m, d) { return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); }
+  function mod7(n) { return ((n % 7) + 7) % 7; }
+
+  function centuryAnchor(y) {
+    // Anker des Jahrhunderts: 1800 Fr, 1900 Mi, 2000 Di, 2100 So
+    var c = Math.floor(y / 100);
+    return mod7(5 * (c % 4) + 2);
+  }
+
+  function monthRef(y, m) {
+    var leap = isLeap(y);
+    return [leap ? 4 : 3, leap ? 29 : 28, 14, 4, 9, 6, 11, 8, 5, 10, 7, 12][m - 1];
+  }
+
+  function solve(y, m, d) {
+    var anchor = centuryAnchor(y);
+    var yy = y % 100;
+    var a = Math.floor(yy / 12), b = yy % 12, c = Math.floor(b / 4);
+    var doom = mod7(anchor + a + b + c);
+    var ref = monthRef(y, m);
+    var diff = d - ref;
+    var result = mod7(doom + diff);
+    return { anchor: anchor, yy: yy, a: a, b: b, c: c, doom: doom, ref: ref, diff: diff, result: result, leap: isLeap(y) };
+  }
+  KK.doomsday = { solve: solve, weekday: weekday, centuryAnchor: centuryAnchor };
+
+  function dateText(y, m, d) { return d + '. ' + MONTHS[m - 1] + ' ' + y; }
+
+  // ---- Statistik ----
+  function loadStats() {
+    return KK.store.get('doomsday.stats', { rounds: 0, correct: 0, streak: 0, best: 0, fastest: null, timeSum: 0 });
+  }
+
+  function randomDate(range) {
+    var r = RANGES[range] || RANGES.all;
+    var y = KK.randInt(r.from, r.to);
+    var m = KK.randInt(1, 12);
+    var d = KK.randInt(1, daysIn(y, m));
+    return { y: y, m: m, d: d };
+  }
+
+  // ---- Lösungsweg ----
+  function explanation(q, s) {
+    var steps = [];
+    var anchorYear = Math.floor(q.y / 100) * 100;
+    steps.push(['Jahrhundert-Anker', anchorYear + ' → ' + DAYS[s.anchor] + ' (' + s.anchor + ')']);
+    steps.push(['Jahr ' + (s.yy < 10 ? '0' : '') + s.yy,
+      s.yy + ' ÷ 12 = ' + s.a + ' Rest ' + s.b + ', ' + s.b + ' ÷ 4 = ' + s.c +
+      ' → ' + s.a + ' + ' + s.b + ' + ' + s.c + ' = ' + (s.a + s.b + s.c)]);
+    steps.push(['Doomsday ' + q.y, s.anchor + ' + ' + (s.a + s.b + s.c) + ' = ' + (s.anchor + s.a + s.b + s.c) +
+      (s.anchor + s.a + s.b + s.c >= 7 ? ' → mod 7 = ' + s.doom : '') + ' → ' + DAYS[s.doom]]);
+    if (q.d !== undefined) {
+      var refTxt = s.ref + '. ' + MONTHS[q.m - 1];
+      var leapNote = (q.m <= 2) ? (s.leap ? ' (Schaltjahr)' : ' (kein Schaltjahr)') : '';
+      steps.push(['Merkdatum', refTxt + leapNote + ' ist ein ' + DAYS[s.doom]]);
+      var diffTxt = s.diff === 0 ? 'Gleicher Tag, kein Abstand'
+        : (s.diff > 0 ? '+' : '') + s.diff + ' Tage' + (Math.abs(s.diff) >= 7 ? ' → mod 7 = ' + (s.diff > 0 ? '+' : '') + (s.diff > 0 ? s.diff % 7 : -((-s.diff) % 7)) : '');
+      steps.push(['Abstand zum ' + q.d + '.', diffTxt]);
+    }
+    steps.push(['Ergebnis', DAYS[s.result]]);
+    var list = h('ol', { class: 'steps' });
+    steps.forEach(function (st, i) {
+      list.appendChild(h('li', { class: i === steps.length - 1 ? 'final' : '' }, [
+        h('span', { class: 'step-k', text: st[0] }),
+        h('span', { class: 'step-v', text: st[1] })
+      ]));
+    });
+    return list;
+  }
+
+  // ---- Übungsansicht ----
+  var state = null;
+
+  function mountTrainer(root) {
+    var settings = KK.store.get('doomsday.settings', { range: 'all', kind: 'date' });
+    state = { settings: settings, q: null, answered: false, start: 0, timer: null };
+
+    var statsBar = h('div', { class: 'dd-stats' });
+    var kindSel = h('div', { class: 'seg', role: 'group', 'aria-label': 'Übungsart' });
+    [['date', 'Ganzes Datum'], ['year', 'Nur Jahr']].forEach(function (k) {
+      kindSel.appendChild(h('button', {
+        class: 'seg-btn' + (settings.kind === k[0] ? ' on' : ''), text: k[1],
+        'aria-pressed': settings.kind === k[0] ? 'true' : 'false',
+        onclick: function () { settings.kind = k[0]; KK.store.set('doomsday.settings', settings); rerender(); }
+      }));
+    });
+    var rangeSel = h('div', { class: 'seg', role: 'group', 'aria-label': 'Zeitraum' });
+    ['all', 'c20', 'c21'].forEach(function (k) {
+      rangeSel.appendChild(h('button', {
+        class: 'seg-btn' + (settings.range === k ? ' on' : ''), text: RANGES[k].label,
+        'aria-pressed': settings.range === k ? 'true' : 'false',
+        onclick: function () { settings.range = k; KK.store.set('doomsday.settings', settings); rerender(); }
+      }));
+    });
+
+    var card = h('section', { class: 'dd-card' });
+    var answers = h('div', { class: 'dd-answers' });
+    var after = h('div', { class: 'dd-after' });
+
+    root.appendChild(h('div', { class: 'dd-controls' }, [kindSel, rangeSel]));
+    root.appendChild(statsBar);
+    root.appendChild(card);
+    root.appendChild(answers);
+    root.appendChild(after);
+    root.appendChild(h('button', { class: 'btn ghost wide', text: 'So funktioniert die Methode', onclick: function () { KK.go('doomsday/lernen'); } }));
+
+    function rerender() { root.innerHTML = ''; clearInterval(state.timer); mountTrainer(root); }
+
+    function renderStats() {
+      var s = loadStats();
+      var rate = s.rounds ? Math.round(100 * s.correct / s.rounds) : 0;
+      var avg = s.correct ? (s.timeSum / s.correct).toFixed(1).replace('.', ',') + ' s' : '–';
+      statsBar.innerHTML = '';
+      [['Serie', s.streak], ['Beste Serie', s.best], ['Trefferquote', rate + ' %'], ['Ø Zeit', avg]].forEach(function (p) {
+        statsBar.appendChild(h('div', { class: 'stat' }, [h('b', { text: String(p[1]) }), h('span', { text: p[0] })]));
+      });
+    }
+
+    function next() {
+      state.q = randomDate(settings.range);
+      state.answered = false;
+      var q = state.q;
+      card.innerHTML = '';
+      if (settings.kind === 'year') {
+        card.appendChild(h('p', { class: 'dd-ask', text: 'Auf welchen Wochentag fällt der Doomsday im Jahr' }));
+        card.appendChild(h('p', { class: 'dd-date dd-year', text: String(q.y) }));
+      } else {
+        card.appendChild(h('p', { class: 'dd-ask', text: 'Welcher Wochentag war oder ist der' }));
+        card.appendChild(h('p', { class: 'dd-date' }, [
+          h('span', { class: 'dd-day', text: q.d + '.' }), ' ',
+          h('span', { class: 'dd-month', text: MONTHS[q.m - 1] }), ' ',
+          h('span', { class: 'dd-yr', text: String(q.y) })
+        ]));
+      }
+      var clock = h('p', { class: 'dd-clock', text: '0,0 s' });
+      card.appendChild(clock);
+      state.start = Date.now();
+      clearInterval(state.timer);
+      state.timer = setInterval(function () {
+        var t = (Date.now() - state.start) / 1000;
+        clock.textContent = t.toFixed(1).replace('.', ',') + ' s';
+      }, 100);
+
+      answers.innerHTML = '';
+      ORDER.forEach(function (wd) {
+        answers.appendChild(h('button', {
+          class: 'dd-ans', 'data-wd': wd,
+          onclick: function () { answer(wd); }
+        }, [h('span', { class: 'dd-ans-short', text: SHORT[wd] }), h('span', { class: 'dd-ans-long', text: DAYS[wd] })]));
+      });
+      after.innerHTML = '';
+      renderStats();
+    }
+
+    function answer(wd) {
+      if (state.answered) return;
+      state.answered = true;
+      clearInterval(state.timer);
+      var secs = (Date.now() - state.start) / 1000;
+      var q = state.q;
+      var s = solve(q.y, settings.kind === 'year' ? 4 : q.m, settings.kind === 'year' ? 4 : q.d);
+      var correct = settings.kind === 'year' ? s.doom : s.result;
+      // Sicherheitscheck gegen den echten Kalender
+      if (settings.kind !== 'year' && correct !== weekday(q.y, q.m, q.d)) correct = weekday(q.y, q.m, q.d);
+      var ok = wd === correct;
+
+      var st = loadStats();
+      st.rounds++;
+      if (ok) {
+        st.correct++; st.streak++; st.best = Math.max(st.best, st.streak); st.timeSum += secs;
+        if (st.fastest === null || secs < st.fastest) st.fastest = secs;
+        KK.points.add('doomsday', 1);
+      } else {
+        st.streak = 0;
+        KK.vibrate(120);
+      }
+      KK.store.set('doomsday.stats', st);
+
+      Array.prototype.forEach.call(answers.children, function (b) {
+        var bwd = +b.getAttribute('data-wd');
+        b.disabled = true;
+        if (bwd === correct) b.classList.add('right');
+        else if (bwd === wd) b.classList.add('wrong');
+      });
+
+      after.innerHTML = '';
+      var verdict = ok
+        ? h('p', { class: 'verdict ok' }, ['Richtig! ' + secs.toFixed(1).replace('.', ',') + ' s', st.streak > 1 ? ' – ' + st.streak + ' in Folge' : ''])
+        : h('p', { class: 'verdict bad', text: 'Leider nicht. Es ist ein ' + DAYS[correct] + '.' });
+      var q2 = settings.kind === 'year' ? { y: q.y } : q;
+      var details = h('details', { class: 'explain', open: !ok }, [
+        h('summary', { text: 'Lösungsweg' }),
+        explanation(q2, settings.kind === 'year' ? { anchor: s.anchor, yy: s.yy, a: s.a, b: s.b, c: s.c, doom: s.doom, result: s.doom } : s)
+      ]);
+      var nextBtn = h('button', { class: 'btn primary wide', text: 'Nächstes Datum', onclick: next });
+      after.appendChild(verdict);
+      after.appendChild(nextBtn);
+      after.appendChild(details);
+      renderStats();
+      nextBtn.focus({ preventScroll: true });
+    }
+
+    next();
+  }
+
+  // ---- Erklärseite ----
+  function mountLearn(root) {
+    var ex = solve(1987, 10, 12);
+    var art = h('article', { class: 'learn' });
+    art.innerHTML =
+      '<p class="lead">Jedes Jahr gibt es Tage, die immer auf denselben Wochentag fallen – den <b>Doomsday</b> des Jahres. ' +
+      'Kennst du ihn, rechnest du jedes Datum in Sekunden aus.</p>' +
+      '<h3>1. Wochentage als Zahlen</h3>' +
+      '<p>So&nbsp;=&nbsp;0, Mo&nbsp;=&nbsp;1, Di&nbsp;=&nbsp;2, Mi&nbsp;=&nbsp;3, Do&nbsp;=&nbsp;4, Fr&nbsp;=&nbsp;5, Sa&nbsp;=&nbsp;6. Gerechnet wird immer „modulo 7“, also nur der Rest nach Teilen durch 7.</p>' +
+      '<h3>2. Anker des Jahrhunderts</h3>' +
+      '<table class="tbl"><tr><th>1900–1999</th><td>Mittwoch (3)</td></tr><tr><th>2000–2099</th><td>Dienstag (2)</td></tr><tr><th>2100</th><td>Sonntag (0)</td></tr></table>' +
+      '<h3>3. Doomsday des Jahres</h3>' +
+      '<p>Nimm die letzten zwei Ziffern des Jahres:</p>' +
+      '<ol class="plain"><li>Wie oft passt 12 hinein? (<i>a</i>)</li><li>Was bleibt übrig? (<i>b</i>)</li><li>Wie oft passt 4 in den Rest? (<i>c</i>)</li></ol>' +
+      '<p>Anker + <i>a</i> + <i>b</i> + <i>c</i>, modulo 7 – das ist der Doomsday des Jahres.</p>' +
+      '<h3>4. Merkdaten – alle fallen auf den Doomsday</h3>' +
+      '<table class="tbl months">' +
+      '<tr><th>Januar</th><td>3. (im Schaltjahr 4.)</td></tr>' +
+      '<tr><th>Februar</th><td>28. (im Schaltjahr 29.)</td></tr>' +
+      '<tr><th>März</th><td>14. (Pi-Tag)</td></tr>' +
+      '<tr><th>April, Juni, August, Oktober, Dezember</th><td>4.4., 6.6., 8.8., 10.10., 12.12.</td></tr>' +
+      '<tr><th>Mai, September</th><td>9.5. und 5.9.</td></tr>' +
+      '<tr><th>Juli, November</th><td>11.7. und 7.11.</td></tr>' +
+      '</table>' +
+      '<p class="tip">Eselsbrücke für die ungeraden Monate: „Ich arbeite von <b>9 bis 5</b> im <b>7-Eleven</b>“ – 9.5./5.9. und 7.11./11.7.</p>' +
+      '<h3>5. Abstand zählen</h3>' +
+      '<p>Vom Merkdatum des Monats zum gesuchten Tag zählen, Vielfache von 7 weglassen. Fertig.</p>' +
+      '<h3>Beispiel: 12. Oktober 1987</h3>';
+    var exList = explanation({ y: 1987, m: 10, d: 12 }, ex);
+    art.appendChild(exList);
+    var more = h('div', {});
+    more.innerHTML =
+      '<h3>Schaltjahre</h3><p>Durch 4 teilbar = Schaltjahr. Ausnahme: volle Jahrhunderte, außer sie sind durch 400 teilbar. ' +
+      '1900 und 2100 sind also <b>keine</b> Schaltjahre, 2000 schon.</p>' +
+      '<h3>Übungstipp</h3><p>Starte mit „Nur Jahr“, bis der Doomsday eines Jahres sitzt. Dann aufs ganze Datum wechseln. ' +
+      'Mit etwas Übung schaffst du ein Datum in unter 5 Sekunden.</p>';
+    art.appendChild(more);
+    art.appendChild(h('button', { class: 'btn primary wide', text: 'Jetzt üben', onclick: function () { history.length > 1 ? history.back() : KK.go('doomsday'); } }));
+    root.appendChild(art);
+  }
+
+  KK.modes.doomsday = {
+    title: function (sub) { return sub === 'lernen' ? 'So geht’s' : 'Wochentag-Trainer'; },
+    mount: function (root, sub) {
+      if (sub === 'lernen') mountLearn(root); else mountTrainer(root);
+    },
+    unmount: function () { if (state) clearInterval(state.timer); }
+  };
+})();
+
+</script>
+<script>/* js/sudoku.js */
+/* Knobelkiste – Sudoku mit Generator (eindeutige Lösung) */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+
+  var LEVELS = {
+    leicht: { label: 'Leicht', clues: 38, points: 5 },
+    mittel: { label: 'Mittel', clues: 31, points: 10 },
+    schwer: { label: 'Schwer', clues: 25, points: 20 }
+  };
+
+  // ---- Generator ----
+  var ROW = [], COL = [], BOX = [], PEERS = [];
+  (function () {
+    for (var i = 0; i < 81; i++) {
+      ROW[i] = Math.floor(i / 9); COL[i] = i % 9;
+      BOX[i] = Math.floor(ROW[i] / 3) * 3 + Math.floor(COL[i] / 3);
+    }
+    for (var a = 0; a < 81; a++) {
+      PEERS[a] = [];
+      for (var b = 0; b < 81; b++) {
+        if (a !== b && (ROW[a] === ROW[b] || COL[a] === COL[b] || BOX[a] === BOX[b])) PEERS[a].push(b);
+      }
+    }
+  })();
+
+  function bitCount(n) { var c = 0; while (n) { n &= n - 1; c++; } return c; }
+
+  // Zählt Lösungen (bricht bei "limit" ab). grid: Array(81) mit 0 = leer
+  function countSolutions(grid, limit) {
+    var g = grid.slice();
+    var rows = [0, 0, 0, 0, 0, 0, 0, 0, 0], cols = rows.slice(), boxes = rows.slice();
+    for (var i = 0; i < 81; i++) {
+      if (g[i]) {
+        var bit = 1 << g[i];
+        if ((rows[ROW[i]] | cols[COL[i]] | boxes[BOX[i]]) & bit) return 0;
+        rows[ROW[i]] |= bit; cols[COL[i]] |= bit; boxes[BOX[i]] |= bit;
+      }
+    }
+    var count = 0;
+    function rec() {
+      var best = -1, bestMask = 0, bestCount = 10;
+      for (var i = 0; i < 81; i++) {
+        if (g[i]) continue;
+        var used = rows[ROW[i]] | cols[COL[i]] | boxes[BOX[i]];
+        var free = ~used & 0x3FE;
+        var c = bitCount(free);
+        if (c < bestCount) { best = i; bestMask = free; bestCount = c; if (c <= 1) break; }
+      }
+      if (best === -1) { count++; return count >= limit; }
+      if (bestCount === 0) return false;
+      for (var v = 1; v <= 9; v++) {
+        var bit = 1 << v;
+        if (!(bestMask & bit)) continue;
+        g[best] = v; rows[ROW[best]] |= bit; cols[COL[best]] |= bit; boxes[BOX[best]] |= bit;
+        if (rec()) return true;
+        g[best] = 0; rows[ROW[best]] &= ~bit; cols[COL[best]] &= ~bit; boxes[BOX[best]] &= ~bit;
+      }
+      return false;
+    }
+    rec();
+    return count;
+  }
+
+  function fullGrid() {
+    var g = new Array(81).fill(0);
+    function ok(i, v) {
+      for (var k = 0; k < PEERS[i].length; k++) if (g[PEERS[i][k]] === v) return false;
+      return true;
+    }
+    function fill(i) {
+      if (i === 81) return true;
+      var vals = KK.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      for (var k = 0; k < 9; k++) {
+        if (ok(i, vals[k])) { g[i] = vals[k]; if (fill(i + 1)) return true; g[i] = 0; }
+      }
+      return false;
+    }
+    fill(0);
+    return g;
+  }
+
+  function generate(level) {
+    var target = LEVELS[level].clues;
+    var best = null;
+    for (var attempt = 0; attempt < 6; attempt++) {
+      var solution = fullGrid();
+      var puzzle = solution.slice();
+      var clues = 81;
+      // Paarweise symmetrisch entfernen, wie in Rätselheften
+      var cells = KK.shuffle(Array.from({ length: 41 }, function (_, i) { return i; }));
+      for (var k = 0; k < cells.length && clues > target; k++) {
+        var a = cells[k], b = 80 - a;
+        var va = puzzle[a], vb = puzzle[b];
+        puzzle[a] = 0; puzzle[b] = 0;
+        var removed = a === b ? 1 : 2;
+        if (clues - removed < target - 1 || countSolutions(puzzle, 2) !== 1) {
+          puzzle[a] = va; puzzle[b] = vb;
+        } else {
+          clues -= removed;
+        }
+      }
+      if (!best || clues < best.clues) best = { puzzle: puzzle, solution: solution, clues: clues };
+      if (clues <= target + 1) break;
+    }
+    return best;
+  }
+  KK.sudoku = { generate: generate, countSolutions: countSolutions };
+
+  // ---- Spiel ----
+  var game = null, sel = -1, noteMode = false, timer = null, root = null, undo = [];
+
+  function save() { if (game) KK.store.set('sudoku.game', game); }
+
+  function newGame(level) {
+    var g = generate(level);
+    game = {
+      level: level, puzzle: g.puzzle, solution: g.solution,
+      values: g.puzzle.slice(), notes: new Array(81).fill(0),
+      elapsed: 0, hints: 0, done: false, checked: false
+    };
+    sel = -1; undo = [];
+    save();
+  }
+
+  function conflicts(i) {
+    var v = game.values[i];
+    if (!v) return false;
+    for (var k = 0; k < PEERS[i].length; k++) if (game.values[PEERS[i][k]] === v) return true;
+    return false;
+  }
+
+  function setValue(i, v) {
+    if (game.done || game.puzzle[i]) return;
+    undo.push({ i: i, v: game.values[i], n: game.notes[i] });
+    if (undo.length > 200) undo.shift();
+    if (noteMode && v) {
+      if (game.values[i]) return;
+      game.notes[i] ^= (1 << v);
+    } else {
+      game.values[i] = game.values[i] === v ? 0 : v;
+      game.notes[i] = 0;
+      if (v && game.values[i]) {
+        // Notizen in Nachbarzellen bereinigen
+        PEERS[i].forEach(function (p) { game.notes[p] &= ~(1 << v); });
+      }
+    }
+    game.checked = false;
+    save();
+    draw();
+    checkWin();
+  }
+
+  function checkWin() {
+    for (var i = 0; i < 81; i++) if (game.values[i] !== game.solution[i]) return;
+    game.done = true;
+    clearInterval(timer);
+    var base = LEVELS[game.level].points;
+    var pts = Math.max(1, base - game.hints * 2);
+    game.earned = pts;
+    KK.points.add('sudoku', pts);
+    var st = KK.store.get('sudoku.stats', {});
+    var key = game.level;
+    if (!st[key] || game.elapsed < st[key]) st[key] = game.elapsed;
+    KK.store.set('sudoku.stats', st);
+    save();
+    draw();
+    KK.vibrate([60, 40, 60]);
+  }
+
+  function draw() {
+    if (!root) return;
+    var board = root.querySelector('.su-board');
+    var selVal = sel >= 0 ? game.values[sel] : 0;
+    var cells = board.children;
+    for (var i = 0; i < 81; i++) {
+      var c = cells[i];
+      var v = game.values[i];
+      var cls = 'su-cell';
+      if (COL[i] % 3 === 2 && COL[i] !== 8) cls += ' br';
+      if (ROW[i] % 3 === 2 && ROW[i] !== 8) cls += ' bb';
+      if (game.puzzle[i]) cls += ' given';
+      if (sel >= 0) {
+        if (i === sel) cls += ' sel';
+        else if (ROW[i] === ROW[sel] || COL[i] === COL[sel] || BOX[i] === BOX[sel]) cls += ' peer';
+        if (selVal && v === selVal && i !== sel) cls += ' same';
+      }
+      if (v && !game.puzzle[i] && conflicts(i)) cls += ' bad';
+      if (game.checked && v && !game.puzzle[i] && v !== game.solution[i]) cls += ' bad';
+      c.className = cls;
+      if (v) {
+        c.textContent = v;
+      } else if (game.notes[i]) {
+        var n = '';
+        for (var d = 1; d <= 9; d++) n += '<span>' + ((game.notes[i] >> d) & 1 ? d : '') + '</span>';
+        c.innerHTML = '<div class="notes">' + n + '</div>';
+      } else c.textContent = '';
+    }
+    // Zahlenblock: wie viele noch fehlen
+    var counts = new Array(10).fill(0);
+    game.values.forEach(function (v) { counts[v]++; });
+    root.querySelectorAll('.su-num').forEach(function (b) {
+      var d = +b.getAttribute('data-d');
+      b.classList.toggle('used', counts[d] >= 9);
+      b.querySelector('small').textContent = counts[d] >= 9 ? '✓' : 9 - counts[d];
+    });
+    root.querySelector('.su-note').classList.toggle('on', noteMode);
+    root.querySelector('.su-note').setAttribute('aria-pressed', noteMode ? 'true' : 'false');
+    var win = root.querySelector('.su-win');
+    win.hidden = !game.done;
+    if (game.done) {
+      win.querySelector('p').textContent = 'Gelöst in ' + KK.formatTime(game.elapsed) + ' – +' + (game.earned || 0) + ' Punkte';
+    }
+    root.querySelector('.su-time').textContent = KK.formatTime(game.elapsed);
+    root.querySelector('.su-level').textContent = LEVELS[game.level].label + (game.hints ? ' · ' + game.hints + ' Tipp' + (game.hints > 1 ? 's' : '') : '');
+  }
+
+  function build(r) {
+    root = r;
+    var levelSel = h('div', { class: 'seg', role: 'group', 'aria-label': 'Neues Spiel' });
+    Object.keys(LEVELS).forEach(function (k) {
+      levelSel.appendChild(h('button', {
+        class: 'seg-btn', text: LEVELS[k].label,
+        onclick: function () {
+          if (!game.done && game.values.some(function (v, i) { return v && !game.puzzle[i]; }) &&
+            !window.confirm('Neues Sudoku starten? Das aktuelle geht verloren.')) return;
+          startNew(k);
+        }
+      }));
+    });
+
+    var head = h('div', { class: 'su-head' }, [
+      h('span', { class: 'su-level' }), h('span', { class: 'su-time', 'aria-label': 'Zeit' })
+    ]);
+
+    var board = h('div', { class: 'su-board', role: 'grid', 'aria-label': 'Sudoku-Feld' });
+    for (var i = 0; i < 81; i++) {
+      (function (i) {
+        var b = h('button', {
+          class: 'su-cell', 'data-i': i,
+          'aria-label': 'Zeile ' + (ROW[i] + 1) + ', Spalte ' + (COL[i] + 1),
+          onclick: function () { sel = i; draw(); }
+        });
+        board.appendChild(b);
+      })(i);
+    }
+
+    var pad = h('div', { class: 'su-pad' });
+    for (var d = 1; d <= 9; d++) {
+      (function (d) {
+        pad.appendChild(h('button', {
+          class: 'su-num', 'data-d': d, 'aria-label': 'Zahl ' + d,
+          onclick: function () { if (sel >= 0) setValue(sel, d); else KK.toast('Erst ein Feld antippen'); }
+        }, [String(d), h('small', {})]));
+      })(d);
+    }
+
+    var tools = h('div', { class: 'su-tools' }, [
+      h('button', { class: 'tool', text: 'Rückgängig', onclick: doUndo }),
+      h('button', { class: 'tool', text: 'Löschen', onclick: function () { if (sel >= 0 && !game.puzzle[sel]) { undo.push({ i: sel, v: game.values[sel], n: game.notes[sel] }); game.values[sel] = 0; game.notes[sel] = 0; save(); draw(); } } }),
+      h('button', { class: 'tool su-note', text: 'Notizen', 'aria-pressed': 'false', onclick: function () { noteMode = !noteMode; draw(); } }),
+      h('button', { class: 'tool', text: 'Prüfen', onclick: doCheck }),
+      h('button', { class: 'tool', text: 'Tipp', onclick: doHint })
+    ]);
+
+    var win = h('div', { class: 'su-win', hidden: true }, [
+      h('h3', { text: 'Geschafft!' }), h('p', {}),
+      h('button', { class: 'btn primary', text: 'Noch eins', onclick: function () { startNew(game.level); } })
+    ]);
+
+    r.appendChild(levelSel);
+    r.appendChild(head);
+    r.appendChild(board);
+    r.appendChild(win);
+    r.appendChild(pad);
+    r.appendChild(tools);
+  }
+
+  function doUndo() {
+    var u = undo.pop();
+    if (!u || game.done) return;
+    game.values[u.i] = u.v; game.notes[u.i] = u.n; sel = u.i;
+    save(); draw();
+  }
+
+  function doCheck() {
+    if (game.done) return;
+    var wrong = 0, empty = 0;
+    for (var i = 0; i < 81; i++) {
+      if (!game.values[i]) empty++;
+      else if (game.values[i] !== game.solution[i]) wrong++;
+    }
+    game.checked = true;
+    draw();
+    if (wrong) KK.toast(wrong + (wrong === 1 ? ' Zahl ist' : ' Zahlen sind') + ' falsch – rot markiert', 'bad');
+    else KK.toast('Bisher alles richtig. Noch ' + empty + ' Felder frei.', 'ok');
+  }
+
+  function doHint() {
+    if (game.done) return;
+    var i = sel;
+    if (i < 0 || game.puzzle[i] || game.values[i] === game.solution[i]) {
+      var cands = [];
+      for (var k = 0; k < 81; k++) if (game.values[k] !== game.solution[k]) cands.push(k);
+      if (!cands.length) return;
+      i = cands[Math.floor(Math.random() * cands.length)];
+    }
+    game.hints++;
+    sel = i;
+    var wasNote = noteMode; noteMode = false;
+    game.values[i] = 0;
+    setValue(i, game.solution[i]);
+    noteMode = wasNote;
+    draw();
+    KK.toast('Tipp eingetragen (−2 Punkte beim Lösen)');
+  }
+
+  function startNew(level) {
+    var board = root.querySelector('.su-board');
+    board.classList.add('loading');
+    setTimeout(function () {
+      newGame(level);
+      board.classList.remove('loading');
+      startTimer();
+      draw();
+    }, 30);
+  }
+
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(function () {
+      if (!game || game.done || document.hidden) return;
+      game.elapsed++;
+      var t = root && root.querySelector('.su-time');
+      if (t) t.textContent = KK.formatTime(game.elapsed);
+      if (game.elapsed % 5 === 0) save();
+    }, 1000);
+  }
+
+  function onKey(e) {
+    if (!game || !root) return;
+    if (e.key >= '1' && e.key <= '9') { if (sel >= 0) setValue(sel, +e.key); e.preventDefault(); return; }
+    if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { if (sel >= 0 && !game.puzzle[sel]) { game.values[sel] = 0; game.notes[sel] = 0; save(); draw(); } return; }
+    if (e.key === 'n' || e.key === 'N') { noteMode = !noteMode; draw(); return; }
+    var mv = { ArrowUp: -9, ArrowDown: 9, ArrowLeft: -1, ArrowRight: 1 }[e.key];
+    if (mv) { sel = sel < 0 ? 0 : Math.min(80, Math.max(0, sel + mv)); draw(); e.preventDefault(); }
+  }
+
+  KK.modes.sudoku = {
+    title: 'Sudoku',
+    mount: function (r) {
+      build(r);
+      game = KK.store.get('sudoku.game', null);
+      if (!game || !game.solution) {
+        startNew('leicht');
+      } else {
+        undo = []; sel = -1;
+        startTimer(); draw();
+      }
+      document.addEventListener('keydown', onKey);
+    },
+    unmount: function () {
+      clearInterval(timer); save();
+      document.removeEventListener('keydown', onKey);
+      root = null;
+    }
+  };
+})();
+
+</script>
+<script>/* js/crossword.js */
+/* Knobelkiste – Kreuzworträtsel mit Gitter-Generator */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+  var N = 13;          // maximale Gittergröße beim Bauen
+  var MAX_WORDS = 14;
+
+  // ---- Generator ----
+  function tryBuild(words) {
+    var grid = [], dirs = [];
+    for (var r = 0; r < N; r++) { grid.push(new Array(N).fill(null)); dirs.push(new Array(N).fill('')); }
+    var placed = [], used = {};
+
+    function at(r, c) { return r >= 0 && c >= 0 && r < N && c < N ? grid[r][c] : null; }
+
+    function check(word, r, c, dir) {
+      var dr = dir === 'd' ? 1 : 0, dc = dir === 'a' ? 1 : 0;
+      var er = r + dr * (word.length - 1), ec = c + dc * (word.length - 1);
+      if (r < 0 || c < 0 || er >= N || ec >= N) return -1;
+      if (at(r - dr, c - dc) || at(er + dr, ec + dc)) return -1;
+      var cross = 0;
+      for (var k = 0; k < word.length; k++) {
+        var rr = r + dr * k, cc = c + dc * k, cur = grid[rr][cc];
+        if (cur) {
+          if (cur !== word[k] || dirs[rr][cc].indexOf(dir) >= 0) return -1;
+          cross++;
+        } else {
+          // seitliche Nachbarn müssen frei sein, sonst entstehen Unsinnswörter
+          if (at(rr + dc, cc + dr) || at(rr - dc, cc - dr)) return -1;
+        }
+      }
+      if (cross === word.length) return -1;
+      return cross;
+    }
+
+    function put(w, r, c, dir) {
+      var dr = dir === 'd' ? 1 : 0, dc = dir === 'a' ? 1 : 0;
+      for (var k = 0; k < w[0].length; k++) {
+        grid[r + dr * k][c + dc * k] = w[0][k];
+        dirs[r + dr * k][c + dc * k] += dir;
+      }
+      placed.push({ word: w[0], clue: w[1], r: r, c: c, dir: dir });
+      used[w[0]] = true;
+    }
+
+    var first = null;
+    for (var i = 0; i < words.length; i++) {
+      if (words[i][0].length >= 6 && words[i][0].length <= 9) { first = words[i]; break; }
+    }
+    if (!first) return null;
+    put(first, Math.floor(N / 2), Math.floor((N - first[0].length) / 2), 'a');
+
+    var crossings = 0;
+    for (var pass = 0; pass < 2 && placed.length < MAX_WORDS; pass++) {
+      for (var wi = 0; wi < words.length && placed.length < MAX_WORDS; wi++) {
+        var w = words[wi], word = w[0];
+        if (used[word] || word.length > N) continue;
+        var options = [];
+        for (var r2 = 0; r2 < N; r2++) {
+          for (var c2 = 0; c2 < N; c2++) {
+            var g = grid[r2][c2];
+            if (!g) continue;
+            for (var k = 0; k < word.length; k++) {
+              if (word[k] !== g) continue;
+              ['a', 'd'].forEach(function (dir) {
+                var sr = dir === 'd' ? r2 - k : r2, sc = dir === 'a' ? c2 - k : c2;
+                var x = check(word, sr, sc, dir);
+                if (x > 0) options.push({ r: sr, c: sc, dir: dir, x: x });
+              });
+            }
+          }
+        }
+        if (!options.length) continue;
+        var maxX = Math.max.apply(null, options.map(function (o) { return o.x; }));
+        var bestOpts = options.filter(function (o) { return o.x === maxX; });
+        var o = bestOpts[Math.floor(Math.random() * bestOpts.length)];
+        put(w, o.r, o.c, o.dir);
+        crossings += o.x;
+      }
+    }
+    return { grid: grid, placed: placed, crossings: crossings };
+  }
+
+  function generate() {
+    var best = null, bestScore = -1;
+    for (var t = 0; t < 40; t++) {
+      var words = KK.shuffle(KK.WORDS.slice());
+      var res = tryBuild(words);
+      if (!res) continue;
+      // Ausdehnung bestimmen
+      var minR = N, maxR = 0, minC = N, maxC = 0;
+      res.placed.forEach(function (p) {
+        var er = p.r + (p.dir === 'd' ? p.word.length - 1 : 0);
+        var ec = p.c + (p.dir === 'a' ? p.word.length - 1 : 0);
+        minR = Math.min(minR, p.r); maxR = Math.max(maxR, er);
+        minC = Math.min(minC, p.c); maxC = Math.max(maxC, ec);
+      });
+      var area = (maxR - minR + 1) * (maxC - minC + 1);
+      var score = res.placed.length * 10 + res.crossings * 3 - area / 12;
+      if (score > bestScore) { bestScore = score; best = { res: res, minR: minR, maxR: maxR, minC: minC, maxC: maxC }; }
+    }
+    var rows = best.maxR - best.minR + 1, cols = best.maxC - best.minC + 1;
+    var sol = [];
+    for (var r = 0; r < rows; r++) {
+      sol.push([]);
+      for (var c = 0; c < cols; c++) sol[r].push(best.res.grid[r + best.minR][c + best.minC] || '');
+    }
+    var placed = best.res.placed.map(function (p) {
+      return { word: p.word, clue: p.clue, r: p.r - best.minR, c: p.c - best.minC, dir: p.dir };
+    });
+    // Nummerieren
+    placed.sort(function (a, b) { return a.r - b.r || a.c - b.c || (a.dir === 'a' ? -1 : 1); });
+    var num = 0, lastKey = '';
+    placed.forEach(function (p) {
+      var key = p.r + ',' + p.c;
+      if (key !== lastKey) { num++; lastKey = key; }
+      p.num = num;
+    });
+    return { rows: rows, cols: cols, sol: sol, placed: placed };
+  }
+  KK.crossword = { generate: generate };
+
+  // ---- Spiel ----
+  var game = null, root = null, cur = { r: -1, c: -1, dir: 'a' }, timer = null;
+
+  function save() { if (game) KK.store.set('kreuzwort.game', game); }
+
+  function newGame() {
+    var g = generate();
+    var entries = g.sol.map(function (row) { return row.map(function () { return ''; }); });
+    game = { rows: g.rows, cols: g.cols, sol: g.sol, placed: g.placed, entries: entries, revealed: 0, checked: false, done: false, elapsed: 0 };
+    var p0 = game.placed[0];
+    cur = { r: p0.r, c: p0.c, dir: p0.dir };
+    save();
+  }
+
+  function isCell(r, c) { return r >= 0 && c >= 0 && r < game.rows && c < game.cols && !!game.sol[r][c]; }
+
+  function wordAt(r, c, dir) {
+    for (var i = 0; i < game.placed.length; i++) {
+      var p = game.placed[i];
+      if (p.dir !== dir) continue;
+      if (dir === 'a' && p.r === r && c >= p.c && c < p.c + p.word.length) return p;
+      if (dir === 'd' && p.c === c && r >= p.r && r < p.r + p.word.length) return p;
+    }
+    return null;
+  }
+
+  function cellsOf(p) {
+    var out = [];
+    for (var k = 0; k < p.word.length; k++) out.push(p.dir === 'a' ? [p.r, p.c + k] : [p.r + k, p.c]);
+    return out;
+  }
+
+  function select(r, c) {
+    if (!isCell(r, c)) return;
+    if (cur.r === r && cur.c === c) {
+      var other = cur.dir === 'a' ? 'd' : 'a';
+      if (wordAt(r, c, other)) cur.dir = other;
+    } else {
+      cur.r = r; cur.c = c;
+      if (!wordAt(r, c, cur.dir)) cur.dir = cur.dir === 'a' ? 'd' : 'a';
+    }
+    draw();
+  }
+
+  function selectWord(p) {
+    var cells = cellsOf(p), target = cells[0];
+    for (var i = 0; i < cells.length; i++) {
+      if (!game.entries[cells[i][0]][cells[i][1]]) { target = cells[i]; break; }
+    }
+    cur = { r: target[0], c: target[1], dir: p.dir };
+    draw();
+  }
+
+  function type(letter) {
+    if (game.done || cur.r < 0) return;
+    game.entries[cur.r][cur.c] = letter;
+    game.checked = false;
+    var p = wordAt(cur.r, cur.c, cur.dir);
+    if (p) {
+      var cells = cellsOf(p);
+      var idx = cells.findIndex(function (x) { return x[0] === cur.r && x[1] === cur.c; });
+      // einfach ein Feld weiter, auch über schon ausgefüllte Kreuzungen
+      var moved = false;
+      if (!moved && idx + 1 < cells.length) { cur.r = cells[idx + 1][0]; cur.c = cells[idx + 1][1]; }
+    }
+    save(); draw(); checkWin();
+  }
+
+  function backspace() {
+    if (game.done || cur.r < 0) return;
+    if (game.entries[cur.r][cur.c]) { game.entries[cur.r][cur.c] = ''; }
+    else {
+      var p = wordAt(cur.r, cur.c, cur.dir);
+      if (p) {
+        var cells = cellsOf(p);
+        var idx = cells.findIndex(function (x) { return x[0] === cur.r && x[1] === cur.c; });
+        if (idx > 0) { cur.r = cells[idx - 1][0]; cur.c = cells[idx - 1][1]; game.entries[cur.r][cur.c] = ''; }
+      }
+    }
+    save(); draw();
+  }
+
+  function checkWin() {
+    for (var r = 0; r < game.rows; r++) for (var c = 0; c < game.cols; c++) {
+      if (game.sol[r][c] && game.entries[r][c] !== game.sol[r][c]) return;
+    }
+    game.done = true;
+    clearInterval(timer);
+    var pts = Math.max(2, game.placed.length - game.revealed);
+    game.earned = pts;
+    KK.points.add('kreuzwort', pts);
+    save(); draw();
+    KK.vibrate([60, 40, 60]);
+  }
+
+  function reveal(kind) {
+    if (game.done) return;
+    var cells = [];
+    if (kind === 'letter') cells = [[cur.r, cur.c]];
+    else { var p = wordAt(cur.r, cur.c, cur.dir); if (p) cells = cellsOf(p); }
+    cells.forEach(function (x) {
+      if (game.entries[x[0]][x[1]] !== game.sol[x[0]][x[1]]) {
+        game.entries[x[0]][x[1]] = game.sol[x[0]][x[1]];
+        game.revealed++;
+      }
+    });
+    save(); draw(); checkWin();
+  }
+
+  function check() {
+    var wrong = 0, empty = 0;
+    for (var r = 0; r < game.rows; r++) for (var c = 0; c < game.cols; c++) {
+      if (!game.sol[r][c]) continue;
+      if (!game.entries[r][c]) empty++;
+      else if (game.entries[r][c] !== game.sol[r][c]) wrong++;
+    }
+    game.checked = true; draw();
+    if (wrong) KK.toast(wrong + ' Buchstabe' + (wrong > 1 ? 'n' : '') + ' falsch – rot markiert', 'bad');
+    else KK.toast(empty ? 'Bisher alles richtig. Noch ' + empty + ' frei.' : 'Alles richtig!', 'ok');
+  }
+
+  function draw() {
+    if (!root || !game) return;
+    var gridEl = root.querySelector('.cw-grid');
+    var p = cur.r >= 0 ? wordAt(cur.r, cur.c, cur.dir) : null;
+    var inWord = {};
+    if (p) cellsOf(p).forEach(function (x) { inWord[x[0] + ',' + x[1]] = true; });
+    var starts = {};
+    game.placed.forEach(function (q) { starts[q.r + ',' + q.c] = q.num; });
+
+    gridEl.style.gridTemplateColumns = 'repeat(' + game.cols + ', var(--cw))';
+    var cellPx = Math.floor(Math.min(40, (Math.min(window.innerWidth, 560) - 32) / game.cols));
+    gridEl.style.setProperty('--cw', cellPx + 'px');
+    if (gridEl.children.length !== game.rows * game.cols) {
+      gridEl.innerHTML = '';
+      for (var r = 0; r < game.rows; r++) for (var c = 0; c < game.cols; c++) {
+        (function (r, c) {
+          var cell = h('div', { class: 'cw-cell', 'data-r': r, 'data-c': c });
+          if (game.sol[r][c]) cell.addEventListener('click', function () { select(r, c); });
+          gridEl.appendChild(cell);
+        })(r, c);
+      }
+    }
+    for (var i = 0; i < gridEl.children.length; i++) {
+      var el = gridEl.children[i];
+      var rr = +el.getAttribute('data-r'), cc = +el.getAttribute('data-c');
+      if (!game.sol[rr][cc]) { el.className = 'cw-cell void'; continue; }
+      var key = rr + ',' + cc, cls = 'cw-cell';
+      if (inWord[key]) cls += ' word';
+      if (rr === cur.r && cc === cur.c) cls += ' sel';
+      var e = game.entries[rr][cc];
+      if (game.checked && e && e !== game.sol[rr][cc]) cls += ' bad';
+      if (game.done) cls += ' solved';
+      el.className = cls;
+      el.innerHTML = (starts[key] ? '<i>' + starts[key] + '</i>' : '') + '<b>' + (e || '') + '</b>';
+    }
+
+    var bar = root.querySelector('.cw-current');
+    bar.textContent = p ? p.num + (p.dir === 'a' ? ' waagerecht: ' : ' senkrecht: ') + p.clue + ' (' + p.word.length + ')' : 'Tippe ein Feld an';
+
+    ['a', 'd'].forEach(function (dir) {
+      var list = root.querySelector('.cw-list-' + dir);
+      list.innerHTML = '';
+      game.placed.filter(function (q) { return q.dir === dir; }).sort(function (a, b) { return a.num - b.num; }).forEach(function (q) {
+        var full = cellsOf(q).every(function (x) { return game.entries[x[0]][x[1]]; });
+        list.appendChild(h('li', {
+          class: (q === p ? 'on' : '') + (full ? ' full' : ''),
+          onclick: function () { selectWord(q); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        }, [h('b', { text: q.num + ' ' }), q.clue + ' (' + q.word.length + ')']));
+      });
+    });
+
+    var win = root.querySelector('.cw-win');
+    win.hidden = !game.done;
+    if (game.done) win.querySelector('p').textContent = 'Gelöst in ' + KK.formatTime(game.elapsed) + ' – +' + (game.earned || 0) + ' Punkte';
+  }
+
+  function build(r) {
+    root = r;
+    r.appendChild(h('div', { class: 'cw-top' }, [
+      h('button', { class: 'tool', text: 'Neues Rätsel', onclick: function () {
+        if (!game.done && game.entries.some(function (row) { return row.some(Boolean); }) && !window.confirm('Neues Kreuzworträtsel? Das aktuelle geht verloren.')) return;
+        newGame(); startTimer(); root.querySelector('.cw-grid').innerHTML = ''; draw();
+      } }),
+      h('button', { class: 'tool', text: 'Prüfen', onclick: check }),
+      h('button', { class: 'tool', text: 'Buchstabe', title: 'Buchstabe aufdecken', onclick: function () { reveal('letter'); } }),
+      h('button', { class: 'tool', text: 'Wort', title: 'Wort aufdecken', onclick: function () { reveal('word'); } })
+    ]));
+    r.appendChild(h('div', { class: 'cw-wrap' }, h('div', { class: 'cw-grid' })));
+    r.appendChild(h('div', { class: 'cw-win', hidden: true }, [
+      h('h3', { text: 'Gelöst!' }), h('p', {}),
+      h('button', { class: 'btn primary', text: 'Nächstes Rätsel', onclick: function () { newGame(); startTimer(); root.querySelector('.cw-grid').innerHTML = ''; draw(); } })
+    ]));
+    var kb = h('div', { class: 'kb', 'aria-label': 'Tastatur' });
+    kb.appendChild(h('p', { class: 'cw-current' }));
+    ['QWERTZUIOP', 'ASDFGHJKL', 'YXCVBNM'].forEach(function (row, i) {
+      var rowEl = h('div', { class: 'kb-row' });
+      row.split('').forEach(function (ch) {
+        rowEl.appendChild(h('button', { class: 'kb-key', text: ch, onclick: function () { type(ch); } }));
+      });
+      if (i === 2) rowEl.appendChild(h('button', { class: 'kb-key kb-wide', 'aria-label': 'Löschen', text: '⌫', onclick: backspace }));
+      kb.appendChild(rowEl);
+    });
+    r.appendChild(kb);
+    r.appendChild(h('p', { class: 'hint-small', text: 'Umlaute schreibst du wie im Rätselheft: Ä = AE, Ö = OE, Ü = UE. Feld zweimal antippen wechselt die Richtung.' }));
+    r.appendChild(h('div', { class: 'cw-clues' }, [
+      h('div', {}, [h('h3', { text: 'Waagerecht' }), h('ol', { class: 'cw-list cw-list-a' })]),
+      h('div', {}, [h('h3', { text: 'Senkrecht' }), h('ol', { class: 'cw-list cw-list-d' })])
+    ]));
+  }
+
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(function () {
+      if (!game || game.done || document.hidden) return;
+      game.elapsed++;
+      if (game.elapsed % 5 === 0) save();
+    }, 1000);
+  }
+
+  function onKey(e) {
+    if (!game || !root || e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key;
+    if (/^[a-zA-Z]$/.test(k)) { type(k.toUpperCase()); e.preventDefault(); return; }
+    if (k === 'ä' || k === 'Ä') { type('A'); type('E'); return; }
+    if (k === 'ö' || k === 'Ö') { type('O'); type('E'); return; }
+    if (k === 'ü' || k === 'Ü') { type('U'); type('E'); return; }
+    if (k === 'Backspace') { backspace(); e.preventDefault(); return; }
+    var mv = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[k];
+    if (mv) {
+      var r = cur.r + mv[0], c = cur.c + mv[1];
+      while (r >= 0 && c >= 0 && r < game.rows && c < game.cols && !isCell(r, c)) { r += mv[0]; c += mv[1]; }
+      if (isCell(r, c)) { cur.r = r; cur.c = c; cur.dir = mv[0] ? 'd' : 'a'; if (!wordAt(r, c, cur.dir)) cur.dir = mv[0] ? 'a' : 'd'; draw(); }
+      e.preventDefault();
+    }
+  }
+
+  function onResize() { draw(); }
+
+  KK.modes.kreuzwort = {
+    title: 'Kreuzworträtsel',
+    mount: function (r) {
+      build(r);
+      game = KK.store.get('kreuzwort.game', null);
+      if (!game || !game.placed) newGame();
+      else { var p0 = game.placed[0]; cur = { r: p0.r, c: p0.c, dir: p0.dir }; }
+      startTimer(); draw();
+      document.addEventListener('keydown', onKey);
+      window.addEventListener('resize', onResize);
+    },
+    unmount: function () {
+      clearInterval(timer); save();
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      root = null;
+    }
+  };
+})();
+
+</script>
+<script>/* js/riddles.js */
+/* Knobelkiste – Rätsel: Was ist das? */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+
+  function stripArticle(s) {
+    return s.trim().replace(/^(der|die|das|ein|eine|einen|dein|deine)\s+/i, '');
+  }
+
+  function lev(a, b) {
+    var m = a.length, n = b.length, d = [];
+    for (var i = 0; i <= m; i++) d[i] = [i];
+    for (var j = 0; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    return d[m][n];
+  }
+
+  function matches(guess, r) {
+    var g = KK.normalize(stripArticle(guess));
+    if (!g) return false;
+    var all = [r.a].concat(r.alt || []);
+    for (var i = 0; i < all.length; i++) {
+      var t = KK.normalize(stripArticle(all[i]));
+      if (g === t) return true;
+      if (t.length >= 5 && lev(g, t) <= 1) return true; // kleiner Tippfehler ist okay
+    }
+    return false;
+  }
+  KK.riddleMatches = matches;
+
+  function loadState() {
+    var s = KK.store.get('raetsel.state', null);
+    var n = KK.RIDDLES.length;
+    if (!s || !s.deck || s.deck.length === 0 || s.size !== n) {
+      s = { deck: KK.shuffle(Array.from({ length: n }, function (_, i) { return i; })), size: n, solved: s ? s.solved || 0 : 0, current: null };
+    }
+    return s;
+  }
+
+  var st = null;
+
+  KK.modes.raetsel = {
+    title: 'Rätsel',
+    mount: function (root) {
+      st = loadState();
+      var card = h('section', { class: 'rt-card' });
+      root.appendChild(card);
+
+      function save() { KK.store.set('raetsel.state', st); }
+
+      function show() {
+        if (st.current === null || st.current === undefined) {
+          if (!st.deck.length) st.deck = KK.shuffle(Array.from({ length: KK.RIDDLES.length }, function (_, i) { return i; }));
+          st.current = st.deck.shift();
+          st.hint = false; st.over = false;
+          save();
+        }
+        var r = KK.RIDDLES[st.current];
+        card.innerHTML = '';
+        var left = st.deck.length;
+        card.appendChild(h('p', { class: 'rt-meta', text: st.solved + ' gelöst, noch ' + left + ' im Stapel' }));
+        card.appendChild(h('blockquote', { class: 'rt-q', text: r.q }));
+
+        var input = h('input', {
+          class: 'rt-input', type: 'text', placeholder: 'Deine Antwort', autocomplete: 'off',
+          autocapitalize: 'sentences', spellcheck: 'false', enterkeyhint: 'done', 'aria-label': 'Antwort'
+        });
+        var feedback = h('p', { class: 'rt-feedback', 'aria-live': 'polite' });
+        var hintEl = h('p', { class: 'rt-hint' });
+        if (st.hint) hintEl.textContent = hintText(r);
+
+        var form = h('form', { class: 'rt-form', onsubmit: function (e) { e.preventDefault(); guess(); } }, [
+          input, h('button', { class: 'btn primary', type: 'submit', text: 'Prüfen' })
+        ]);
+        var tools = h('div', { class: 'rt-tools' }, [
+          h('button', { class: 'tool', text: 'Tipp', onclick: function () {
+            if (st.over) return;
+            st.hint = true; save(); hintEl.textContent = hintText(r);
+          } }),
+          h('button', { class: 'tool', text: 'Auflösen', onclick: function () { finish(false); } }),
+          h('button', { class: 'tool', text: 'Überspringen', onclick: function () {
+            st.deck.push(st.current); st.current = null; save(); show();
+          } })
+        ]);
+
+        card.appendChild(hintEl);
+        card.appendChild(form);
+        card.appendChild(feedback);
+        card.appendChild(tools);
+
+        function guess() {
+          if (st.over) return;
+          var g = input.value;
+          if (!g.trim()) { input.focus(); return; }
+          if (matches(g, r)) finish(true);
+          else {
+            feedback.className = 'rt-feedback bad';
+            feedback.textContent = '„' + g.trim() + '“ ist es nicht. Noch mal überlegen?';
+            input.select();
+            KK.vibrate(80);
+          }
+        }
+
+        function finish(ok) {
+          st.over = true;
+          var pts = ok ? (st.hint ? 1 : 3) : 0;
+          if (ok) { st.solved++; KK.points.add('raetsel', pts); }
+          st.current = null; save();
+          form.remove(); tools.remove(); hintEl.remove();
+          feedback.className = 'rt-feedback ' + (ok ? 'ok' : 'neutral');
+          feedback.innerHTML = '';
+          feedback.appendChild(document.createTextNode(ok ? 'Richtig! +' + pts + ' Punkt' + (pts > 1 ? 'e' : '') : 'Die Lösung:'));
+          card.appendChild(h('p', { class: 'rt-answer', text: r.a }));
+          if (r.note) card.appendChild(h('p', { class: 'rt-note', text: r.note }));
+          var nextBtn = h('button', { class: 'btn primary wide', text: 'Nächstes Rätsel', onclick: show });
+          card.appendChild(nextBtn);
+          nextBtn.focus({ preventScroll: true });
+        }
+      }
+
+      function hintText(r) {
+        var a = r.a;
+        return 'Tipp: beginnt mit „' + a[0].toUpperCase() + '“ und hat ' + a.replace(/\s/g, '').length + ' Buchstaben. (Richtig gibt dann 1 statt 3 Punkte.)';
+      }
+
+      root.appendChild(h('p', { class: 'hint-small', text: '3 Punkte ohne Tipp, 1 Punkt mit Tipp. Kleine Tippfehler werden verziehen.' }));
+      show();
+    },
+    unmount: function () {}
+  };
+})();
+
+</script>
+<script>/* js/hangman.js */
+/* Knobelkiste – Galgenmännchen gegen den Computer */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+  var LIVES = 10;
+
+  // Teile der Zeichnung, einer pro Fehlversuch
+  var PARTS = [
+    '<line x1="10" y1="150" x2="90" y2="150"/>',
+    '<line x1="30" y1="150" x2="30" y2="12"/>',
+    '<line x1="30" y1="12" x2="100" y2="12"/>',
+    '<line x1="30" y1="38" x2="56" y2="12"/>',
+    '<line x1="100" y1="12" x2="100" y2="34"/>',
+    '<circle cx="100" cy="46" r="12"/>',
+    '<line x1="100" y1="58" x2="100" y2="102"/>',
+    '<line x1="100" y1="70" x2="82" y2="88"/><line x1="100" y1="70" x2="118" y2="88"/>',
+    '<line x1="100" y1="102" x2="86" y2="128"/>',
+    '<line x1="100" y1="102" x2="114" y2="128"/>'
+  ];
+
+  // Wörter aus dem Kreuzworträtsel, ohne umschriebene Umlaute (BRUECKE sieht hier komisch aus)
+  function wordPool() {
+    return KK.WORDS.filter(function (w) {
+      return w[0].length >= 5 && !/AE|OE|[^EQ]UE/.test(w[0]);
+    });
+  }
+
+  var st = null, root = null;
+
+  function save() { KK.store.set('galgen.game', st); }
+
+  function newGame() {
+    var pool = wordPool();
+    var recent = (st && st.recent) || [];
+    var w;
+    do { w = pool[Math.floor(Math.random() * pool.length)]; } while (recent.indexOf(w[0]) >= 0 && recent.length < pool.length);
+    recent = recent.concat(w[0]).slice(-40);
+    st = { word: w[0], clue: w[1], guessed: [], wrong: 0, hint: false, over: false, won: false, recent: recent,
+      wins: st ? st.wins || 0 : 0, losses: st ? st.losses || 0 : 0 };
+    save();
+  }
+
+  function guess(ch) {
+    if (st.over || st.guessed.indexOf(ch) >= 0) return;
+    st.guessed.push(ch);
+    if (st.word.indexOf(ch) < 0) { st.wrong++; KK.vibrate(60); }
+    var solved = st.word.split('').every(function (c) { return st.guessed.indexOf(c) >= 0; });
+    if (solved) {
+      st.over = true; st.won = true; st.wins++;
+      var left = LIVES - st.wrong;
+      st.earned = Math.max(1, 1 + Math.ceil(left / 3) - (st.hint ? 1 : 0));
+      KK.points.add('galgen', st.earned);
+      KK.vibrate([60, 40, 60]);
+    } else if (st.wrong >= LIVES) {
+      st.over = true; st.won = false; st.losses++;
+    }
+    save(); draw();
+  }
+
+  function draw() {
+    if (!root) return;
+    var svg = root.querySelector('.hg-svg');
+    // nur neue Teile anhängen, damit nur der neue Strich eingeblendet wird
+    if (svg.childElementCount > st.wrong) svg.innerHTML = '';
+    var have = +(svg.getAttribute('data-n') || 0);
+    if (svg.childElementCount === 0) have = 0;
+    for (var i = have; i < st.wrong; i++) svg.insertAdjacentHTML('beforeend', '<g>' + PARTS[i] + '</g>');
+    svg.setAttribute('data-n', st.wrong);
+    root.querySelector('.hg-lives').textContent = st.over ? '' : (LIVES - st.wrong) + ' Fehlversuche übrig';
+    root.querySelector('.hg-score').textContent = st.wins + ' gewonnen, ' + st.losses + ' verloren';
+
+    var wordEl = root.querySelector('.hg-word');
+    wordEl.innerHTML = '';
+    st.word.split('').forEach(function (c) {
+      var shown = st.guessed.indexOf(c) >= 0;
+      var cls = 'hg-letter' + (shown ? ' shown' : '') + (st.over && !shown ? ' missed' : '');
+      wordEl.appendChild(h('span', { class: cls, text: shown || st.over ? c : '' }));
+    });
+    wordEl.setAttribute('aria-label', st.over ? st.word : st.word.split('').map(function (c) { return st.guessed.indexOf(c) >= 0 ? c : 'Lücke'; }).join(' '));
+
+    var hintEl = root.querySelector('.hg-hint');
+    hintEl.textContent = st.hint || st.over ? 'Hinweis: ' + st.clue : '';
+    root.querySelector('.hg-hintbtn').hidden = st.hint || st.over;
+
+    root.querySelectorAll('.kb-key').forEach(function (k) {
+      var ch = k.getAttribute('data-k');
+      var used = st.guessed.indexOf(ch) >= 0;
+      k.disabled = used || st.over;
+      k.classList.toggle('hit', used && st.word.indexOf(ch) >= 0);
+      k.classList.toggle('miss', used && st.word.indexOf(ch) < 0);
+    });
+
+    var res = root.querySelector('.hg-result');
+    res.hidden = !st.over;
+    if (st.over) {
+      res.className = 'hg-result ' + (st.won ? 'won' : 'lost');
+      res.querySelector('h3').textContent = st.won ? 'Gerettet!' : 'Hängt.';
+      res.querySelector('p').textContent = st.won
+        ? '+' + st.earned + ' Punkt' + (st.earned > 1 ? 'e' : '') + ', mit ' + st.wrong + ' Fehler' + (st.wrong === 1 ? '' : 'n')
+        : 'Das Wort war ' + st.word + '.';
+    }
+  }
+
+  function onKey(e) {
+    if (!st || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^[a-zA-Z]$/.test(e.key)) { guess(e.key.toUpperCase()); e.preventDefault(); }
+    else if (e.key === 'Enter' && st.over) { newGame(); draw(); }
+  }
+
+  KK.modes.galgen = {
+    title: 'Galgenmännchen',
+    mount: function (r) {
+      root = r;
+      r.appendChild(h('p', { class: 'hg-score' }));
+      r.appendChild(h('div', { class: 'hg-stage' }, [
+        h('div', { class: 'hg-draw', html: '<svg class="hg-svg" viewBox="0 0 130 160" aria-hidden="true"></svg>' }),
+        h('p', { class: 'hg-lives' })
+      ]));
+      r.appendChild(h('div', { class: 'hg-word', role: 'img' }));
+      r.appendChild(h('p', { class: 'hg-hint' }));
+      r.appendChild(h('div', { class: 'hg-result', hidden: true }, [
+        h('h3', {}), h('p', {}),
+        h('button', { class: 'btn primary', text: 'Neues Wort', onclick: function () { newGame(); draw(); } })
+      ]));
+      var kb = h('div', { class: 'kb hg-kb', 'aria-label': 'Buchstaben' });
+      ['QWERTZUIOP', 'ASDFGHJKL', 'YXCVBNM'].forEach(function (row) {
+        var rowEl = h('div', { class: 'kb-row' });
+        row.split('').forEach(function (ch) {
+          rowEl.appendChild(h('button', { class: 'kb-key', 'data-k': ch, text: ch, onclick: function () { guess(ch); } }));
+        });
+        kb.appendChild(rowEl);
+      });
+      r.appendChild(kb);
+      r.appendChild(h('div', { class: 'hg-tools' }, [
+        h('button', { class: 'tool hg-hintbtn', text: 'Hinweis zeigen (−1 Punkt)', onclick: function () { st.hint = true; save(); draw(); } }),
+        h('button', { class: 'tool', text: 'Neues Wort', onclick: function () {
+          if (!st.over && st.guessed.length && !window.confirm('Dieses Wort aufgeben?')) return;
+          if (!st.over && st.guessed.length) { st.losses++; }
+          newGame(); draw();
+        } })
+      ]));
+      st = KK.store.get('galgen.game', null);
+      if (!st || !st.word) newGame();
+      draw();
+      document.addEventListener('keydown', onKey);
+    },
+    unmount: function () { document.removeEventListener('keydown', onKey); root = null; }
+  };
+})();
+
+</script>
+<script>/* js/brands.js */
+/* Knobelkiste – Markenraten mit drei Hinweisen */
+(function () {
+  'use strict';
+  var KK = window.KK, h = KK.h;
+  var POINTS = [3, 2, 1];
+
+  function freshDeck() { return KK.shuffle(Array.from({ length: KK.BRANDS.length }, function (_, i) { return i; })); }
+
+  function loadState() {
+    var s = KK.store.get('marken.state', null);
+    if (!s || !s.deck || s.size !== KK.BRANDS.length) {
+      s = { deck: freshDeck(), size: KK.BRANDS.length, solved: s ? s.solved || 0 : 0, current: null };
+    }
+    return s;
+  }
+
+  KK.modes.marken = {
+    title: 'Markenraten',
+    mount: function (root) {
+      var st = loadState();
+      var card = h('section', { class: 'rt-card mk-card' });
+      root.appendChild(card);
+      root.appendChild(h('p', { class: 'hint-small', text: 'Richtig nach dem 1. Hinweis: 3 Punkte, nach dem 2.: 2, nach dem 3.: 1.' }));
+
+      function save() { KK.store.set('marken.state', st); }
+
+      function show() {
+        if (st.current === null || st.current === undefined) {
+          if (!st.deck.length) st.deck = freshDeck();
+          st.current = st.deck.shift();
+          st.shown = 1;
+          save();
+        }
+        var b = KK.BRANDS[st.current];
+        var item = { a: b.a, alt: b.alt };
+        card.innerHTML = '';
+        card.appendChild(h('p', { class: 'rt-meta', text: st.solved + ' erraten, noch ' + st.deck.length + ' im Stapel' }));
+        card.appendChild(h('h2', { class: 'mk-ask', text: 'Welche Marke ist gesucht?' }));
+        var list = h('ol', { class: 'mk-hints' });
+        card.appendChild(list);
+
+        function renderHints() {
+          list.innerHTML = '';
+          b.h.forEach(function (txt, i) {
+            var open = i < st.shown;
+            list.appendChild(h('li', { class: open ? 'open' : 'locked' }, [
+              h('span', { class: 'mk-pts', text: POINTS[i] + ' P' }),
+              h('span', { class: 'mk-txt', text: open ? txt : 'Noch verdeckt' })
+            ]));
+          });
+          moreBtn.hidden = st.shown >= b.h.length;
+        }
+
+        var input = h('input', {
+          class: 'rt-input', type: 'text', placeholder: 'Markenname', autocomplete: 'off',
+          autocapitalize: 'words', spellcheck: 'false', enterkeyhint: 'done', 'aria-label': 'Markenname'
+        });
+        var feedback = h('p', { class: 'rt-feedback', 'aria-live': 'polite' });
+        var form = h('form', { class: 'rt-form', onsubmit: function (e) { e.preventDefault(); guess(); } }, [
+          input, h('button', { class: 'btn primary', type: 'submit', text: 'Prüfen' })
+        ]);
+        var moreBtn = h('button', { class: 'tool', text: 'Nächster Hinweis', onclick: function () {
+          st.shown = Math.min(b.h.length, st.shown + 1); save(); renderHints();
+        } });
+        var tools = h('div', { class: 'rt-tools mk-tools' }, [
+          moreBtn,
+          h('button', { class: 'tool', text: 'Auflösen', onclick: function () { finish(false); } })
+        ]);
+        card.appendChild(form);
+        card.appendChild(feedback);
+        card.appendChild(tools);
+        renderHints();
+
+        function guess() {
+          var g = input.value;
+          if (!g.trim()) { input.focus(); return; }
+          if (KK.riddleMatches(g, item)) { finish(true); return; }
+          feedback.className = 'rt-feedback bad';
+          if (st.shown < b.h.length) {
+            st.shown++; save(); renderHints();
+            feedback.textContent = '„' + g.trim() + '“ ist es nicht. Hier ist der nächste Hinweis.';
+          } else {
+            feedback.textContent = '„' + g.trim() + '“ ist es nicht. Noch ein Versuch?';
+          }
+          input.select();
+          KK.vibrate(80);
+        }
+
+        function finish(ok) {
+          var pts = ok ? POINTS[st.shown - 1] : 0;
+          if (ok) { st.solved++; KK.points.add('marken', pts); }
+          st.current = null; save();
+          st.shown = b.h.length; renderHints();
+          form.remove(); tools.remove();
+          feedback.className = 'rt-feedback ' + (ok ? 'ok' : 'neutral');
+          feedback.textContent = ok ? 'Richtig! +' + pts + ' Punkt' + (pts > 1 ? 'e' : '') : 'Gesucht war:';
+          card.appendChild(h('p', { class: 'rt-answer', text: b.a }));
+          var nextBtn = h('button', { class: 'btn primary wide', text: 'Nächste Marke', onclick: show });
+          card.appendChild(nextBtn);
+          nextBtn.focus({ preventScroll: true });
+        }
+      }
+      show();
+    },
+    unmount: function () {}
+  };
+})();
+
+</script>
+<script>/* js/app.js */
+/* Knobelkiste – Navigation zwischen den Bereichen */
+(function () {
+  'use strict';
+  var KK = window.KK;
+  var view = document.getElementById('view');
+  var titleEl = document.getElementById('title');
+  var backBtn = document.getElementById('backBtn');
+  var current = null;
+  var depth = 0; // wie viele Schritte wir innerhalb der App navigiert sind
+
+  function parse() {
+    var h = (location.hash || '').replace(/^#\/?/, '');
+    var parts = h.split('/').filter(Boolean);
+    return { mode: parts[0] || 'home', sub: parts[1] || '' };
+  }
+
+  function render() {
+    var r = parse();
+    var mode = KK.modes[r.mode] || KK.modes.home;
+    if (current && current.unmount) {
+      try { current.unmount(); } catch (e) { /* weiter */ }
+    }
+    view.innerHTML = '';
+    view.className = 'view view-' + (KK.modes[r.mode] ? r.mode : 'home');
+    current = mode;
+    var title = typeof mode.title === 'function' ? mode.title(r.sub) : mode.title;
+    titleEl.textContent = title || 'Knobelkiste';
+    document.title = r.mode === 'home' ? 'Knobelkiste' : title + ' – Knobelkiste';
+    backBtn.hidden = r.mode === 'home';
+    mode.mount(view, r.sub);
+    window.scrollTo(0, 0);
+    KK.renderTotal();
+  }
+
+  KK.go = function (path) {
+    depth++;
+    location.hash = '#/' + path;
+  };
+
+  backBtn.addEventListener('click', function () {
+    if (depth > 0) { depth--; history.back(); }
+    else {
+      var r = parse();
+      location.replace('#/' + (r.sub ? r.mode : ''));
+    }
+  });
+
+  window.addEventListener('hashchange', render);
+  render();
+
+  // Offline-Fähigkeit (nur über http/https, nicht in der APK)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* egal */ });
+    });
+  }
+})();
+
+</script>
+</body>
+</html>
